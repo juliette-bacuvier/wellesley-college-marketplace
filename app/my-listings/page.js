@@ -29,6 +29,7 @@ export default function MyListings() {
   const [offers, setOffers] = useState([])
   const [conversations, setConversations] = useState({})
   const [likeCounts, setLikeCounts] = useState({})
+  const [activeTab, setActiveTab] = useState('active')
   const router = useRouter()
 
   const categories = ['Textbooks', 'Furniture', 'Electronics', 'Clothing', 'Kitchen & Appliances', 'Decor', 'Sports & Fitness', 'Other']
@@ -302,18 +303,62 @@ export default function MyListings() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <h2 className="text-3xl font-bold mb-6">Your Listings ({listings.length})</h2>
+        <h2 className="text-3xl font-bold mb-6">Your Listings</h2>
 
-        {listings.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 mb-4">You haven't created any listings yet.</p>
-            <Link href="/create-listing" className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700">
-              Create Your First Listing
-            </Link>
-          </div>
-        ) : (
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6 border-b overflow-x-auto">
+          {[
+            { key: 'active', label: '✅ Active', count: listings.filter(l => !l.is_sold && !l.is_archived && !l.is_draft).length },
+            { key: 'drafts', label: '📝 Drafts', count: listings.filter(l => l.is_draft).length },
+            { key: 'sold', label: '💰 Sold', count: listings.filter(l => l.is_sold).length },
+            { key: 'archived', label: '📦 Archived', count: listings.filter(l => l.is_archived && !l.is_sold).length },
+          ].map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition -mb-px ${activeTab === tab.key ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+            >
+              {tab.label}
+              {tab.count > 0 && <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${activeTab === tab.key ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>{tab.count}</span>}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab content */}
+        {(() => {
+          const filteredListings = listings.filter(l => {
+            if (activeTab === 'active') return !l.is_sold && !l.is_archived && !l.is_draft
+            if (activeTab === 'drafts') return l.is_draft
+            if (activeTab === 'sold') return l.is_sold
+            if (activeTab === 'archived') return l.is_archived && !l.is_sold
+            return true
+          })
+
+          const emptyMessages = {
+            active: { icon: '🛍️', text: "You don't have any active listings.", cta: true },
+            drafts: { icon: '📝', text: "No drafts yet. Save a listing as a draft to finish it later.", cta: false },
+            sold: { icon: '💰', text: "Nothing sold yet. Keep it up!", cta: false },
+            archived: { icon: '📦', text: "No archived listings.", cta: false },
+          }
+
+          if (filteredListings.length === 0) {
+            const empty = emptyMessages[activeTab]
+            return (
+              <div className="text-center py-12 bg-white rounded-xl shadow-sm">
+                <div className="text-5xl mb-3">{empty.icon}</div>
+                <p className="text-gray-600 mb-4">{empty.text}</p>
+                {empty.cta && (
+                  <Link href="/create-listing" className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700">
+                    Create Your First Listing
+                  </Link>
+                )}
+              </div>
+            )
+          }
+
+          return (
           <div className="space-y-4">
-            {listings.map((listing) => {
+            {filteredListings.map((listing) => {
               const imageToShow = listing.image_url || listing.extra_images?.[0]?.image_url
               return (
                 <div key={listing.id} className="bg-white rounded-xl shadow-md p-6">
@@ -434,6 +479,9 @@ export default function MyListings() {
 
                       <div className="flex gap-2 pt-4 border-t flex-wrap">
                         <button onClick={() => fetchOffersForListing(listing.id)} className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 text-sm">View Offers</button>
+                        <button onClick={async () => { await supabase.from('listings').update({ is_draft: !listing.is_draft }).eq('id', listing.id); setListings(listings.map(l => l.id === listing.id ? { ...l, is_draft: !listing.is_draft } : l)) }} className={`px-4 py-2 rounded-md text-sm ${listing.is_draft ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                          {listing.is_draft ? 'Publish' : 'Save as Draft'}
+                        </button>
                         <button onClick={() => toggleSold(listing.id, listing.is_sold)} className={`px-4 py-2 rounded-md text-sm ${listing.is_sold ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-yellow-600 text-white hover:bg-yellow-700'}`}>
                           {listing.is_sold ? 'Mark Available' : 'Mark Sold'}
                         </button>
@@ -486,7 +534,8 @@ export default function MyListings() {
               )
             })}
           </div>
-        )}
+          )
+        })()}
       </main>
 
       <footer className="bg-white border-t mt-12 py-6">
