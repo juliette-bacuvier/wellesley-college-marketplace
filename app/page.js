@@ -473,10 +473,6 @@ export default function Home() {
         )}
       </nav>
 
-                </div>
-        </div>
-      )}
-
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-6 space-y-4">
           <input type="text" placeholder="Search listings..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-4 py-2 border rounded-md" />
