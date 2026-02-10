@@ -51,7 +51,7 @@ export default function ConfirmPage() {
               Back to Sign Up
             </Link>
             <div className="mt-4 text-sm text-gray-400">
-              Still having trouble? Contact <a href="mailto:jbacuvier@wellesley.edu" className="text-blue-500 hover:underline">jbacuvier@wellesley.edu</a>
+              Still having trouble? Contact <a href="mailto:jb122@wellesley.edu" className="text-blue-500 hover:underline">jb122@wellesley.edu</a>
             </div>
           </>
         )}

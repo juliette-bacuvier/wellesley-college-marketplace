@@ -14,7 +14,7 @@ export default function NotFound() {
         </Link>
         <div className="border-t pt-5 text-sm text-gray-400">
           <p>Something broken? Contact me at</p>
-          <a href="mailto:jbacuvier@wellesley.edu" className="text-blue-500 hover:underline font-medium">jbacuvier@wellesley.edu</a>
+          <a href="mailto:jb122@wellesley.edu" className="text-blue-500 hover:underline font-medium">jb122@wellesley.edu</a>
         </div>
       </div>
     </div>

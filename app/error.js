@@ -22,7 +22,7 @@ export default function Error({ error, reset }) {
         </div>
         <div className="border-t pt-5 text-sm text-gray-400">
           <p>If this keeps happening, please reach out:</p>
-          <a href="mailto:jbacuvier@wellesley.edu" className="text-blue-500 hover:underline font-medium">jbacuvier@wellesley.edu</a>
+          <a href="mailto:jb122@wellesley.edu" className="text-blue-500 hover:underline font-medium">jb122@wellesley.edu</a>
         </div>
       </div>
     </div>
