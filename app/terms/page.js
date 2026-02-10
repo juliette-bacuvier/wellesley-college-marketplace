@@ -11,7 +11,7 @@ export default function Terms() {
 
       <main className="max-w-3xl mx-auto px-4 py-12">
         <h1 className="text-4xl font-bold mb-2">Terms of Use</h1>
-        <p className="text-gray-500 text-sm mb-8">Last updated: February 2026</p>
+        <p className="text-gray-500 text-sm mb-8">Last updated: February 10, 2026</p>
 
         <div className="bg-white rounded-xl shadow-md p-8 space-y-8 text-gray-700">
 
@@ -111,12 +111,34 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">12. Governing Law</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">12. In-Person Transactions & Safety</h2>
+            <p className="mb-3">All transactions arranged through the Platform are conducted in person between users. The Platform operator:</p>
+            <ul className="list-disc list-inside space-y-2 text-gray-600">
+              <li>Is <strong>not responsible</strong> for the safety of users during in-person meetups or exchanges</li>
+              <li>Does <strong>not verify</strong> the identity of any user beyond their @wellesley.edu email address</li>
+              <li>Strongly recommends meeting in <strong>public, well-lit areas</strong> on campus</li>
+              <li>Strongly recommends bringing a friend or meeting in a common area such as a dorm lobby</li>
+              <li>Is <strong>not liable</strong> for any theft, injury, or incident occurring during or as a result of a transaction</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">13. No Payment Processing</h2>
+            <p>The Platform does <strong>not process, handle, hold, or facilitate any payments</strong> between users. All payments are made directly between buyers and sellers through third-party services (such as Venmo, Zelle, or cash). The Platform operator is not responsible for any payment disputes, failed payments, fraud, or chargebacks. Users assume all risk associated with their chosen payment method.</p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">14. Age Requirement</h2>
+            <p>By using the Platform, you confirm that you are at least 18 years of age, or that you have obtained parental or guardian consent to use the Platform. The Platform operator assumes no liability for use by minors without proper consent.</p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">15. Governing Law</h2>
             <p>These Terms of Use shall be governed by and construed in accordance with the laws of the Commonwealth of Massachusetts, without regard to its conflict of law provisions.</p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">13. Contact</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">16. Contact</h2>
             <p>If you have questions about these Terms of Use, or wish to report a violation, please contact the Platform operator at <a href="mailto:jb122@wellesley.edu" className="text-blue-600 hover:underline">jb122@wellesley.edu</a>.</p>
           </section>
 
