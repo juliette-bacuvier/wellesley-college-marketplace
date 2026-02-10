@@ -17,6 +17,7 @@ export default function Home() {
   const [userLikes, setUserLikes] = useState(new Set())
   const [likeCounts, setLikeCounts] = useState({})
   const [likedCount, setLikedCount] = useState(0)
+  const [pendingOffersCount, setPendingOffersCount] = useState(0)
   const router = useRouter()
 
   const categories = ['Textbooks', 'Furniture', 'Electronics', 'Clothing', 'Kitchen & Appliances', 'Decor', 'Sports & Fitness', 'Other']
@@ -29,6 +30,7 @@ export default function Home() {
         router.push('/auth')
       } else {
         fetchUserLikes(user.id)
+        fetchPendingOffers(user.id)
       }
     })
     fetchListings()
@@ -39,6 +41,32 @@ export default function Home() {
   useEffect(() => {
     filterListings()
   }, [listings, searchTerm, selectedCategory, selectedDorm, showSold, showFreeOnly])
+
+  const fetchPendingOffers = async (userId) => {
+    try {
+      // Get user's listings
+      const { data: userListings } = await supabase
+        .from('listings')
+        .select('id')
+        .eq('user_id', userId)
+
+      if (!userListings || userListings.length === 0) return
+
+      const listingIds = userListings.map(l => l.id)
+
+      // Get pending offers for user's listings
+      const { data: offers } = await supabase
+        .from('offers')
+        .select('id')
+        .in('listing_id', listingIds)
+        .eq('status', 'pending')
+        .eq('offered_by', 'buyer')
+
+      setPendingOffersCount(offers?.length || 0)
+    } catch (error) {
+      console.error('Error fetching pending offers:', error)
+    }
+  }
 
   const calculateYearLevel = (classYear, graduationTerm) => {
     if (classYear === 'Exchange') return { level: 'Exchange Student', priority: 1 }
@@ -285,15 +313,23 @@ export default function Home() {
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold">Wellesley College Marketplace</h1>
-          <div className="flex items-center gap-4">
-            <Link href="/help" className="text-gray-600 hover:text-gray-900 text-2xl" title="Help">
-              ❓
+          <div className="flex items-center gap-6">
+            <Link href="/help" className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300" title="Help">
+              <span className="text-lg">?</span>
             </Link>
-            <Link href="/profile" className="text-gray-600 hover:text-gray-900 text-2xl" title="My Profile">
-              👤
-            </Link>
-            <Link href="/my-listings" className="text-gray-600 hover:text-gray-900" title="My Listings">
+            <Link href="/my-listings" className="relative text-gray-600 hover:text-gray-900" title="My Listings">
               My Listings
+              {pendingOffersCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                  {pendingOffersCount}
+                </span>
+              )}
+            </Link>
+            <Link href="/my-purchases" className="text-gray-600 hover:text-gray-900">
+              My Purchases
+            </Link>
+            <Link href="/create-listing" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+              Create Listing
             </Link>
             <Link href="/my-likes" className="relative text-gray-600 hover:text-gray-900 text-2xl" title="My Likes">
               ❤️
@@ -303,11 +339,8 @@ export default function Home() {
                 </span>
               )}
             </Link>
-            <Link href="/my-purchases" className="text-gray-600 hover:text-gray-900">
-              My Purchases
-            </Link>
-            <Link href="/create-listing" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-              Create Listing
+            <Link href="/profile" className="text-gray-600 hover:text-gray-900 text-2xl" title="My Profile">
+              👤
             </Link>
             <button onClick={handleSignOut} className="text-gray-600 hover:text-gray-900">
               Sign Out
