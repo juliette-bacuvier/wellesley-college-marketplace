@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import OnboardingModal from './components/OnboardingModal'
+import ProfileSetupModal from './components/ProfileSetupModal'
 
 export default function Home() {
   const [listings, setListings] = useState([])
@@ -27,6 +28,7 @@ export default function Home() {
   const [adminIds, setAdminIds] = useState(new Set())
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [showProfileSetup, setShowProfileSetup] = useState(false)
   const router = useRouter()
 
   const categories = ['Textbooks', 'Furniture', 'Electronics', 'Clothing', 'Kitchen & Appliances', 'Decor', 'Sports & Fitness', 'Other']
@@ -41,6 +43,7 @@ export default function Home() {
         fetchUnreadMessages(user.id)
         checkAdminStatus(user.id)
         checkOnboarding(user.id)
+        checkProfileSetup(user.id)
       }
       setLoading(false)
     })
@@ -76,6 +79,21 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Error checking onboarding:', error)
+    }
+  }
+
+  const checkProfileSetup = async (userId) => {
+    try {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('setup') !== 'true') return
+      const { data } = await supabase.from('profiles').select('name, class_year').eq('id', userId).single()
+      if (!data?.name || !data?.class_year) {
+        setShowProfileSetup(true)
+      }
+      // Clean URL
+      window.history.replaceState({}, '', '/')
+    } catch (error) {
+      console.error('Error checking profile setup:', error)
     }
   }
 
@@ -403,6 +421,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
       {showOnboarding && <OnboardingModal onComplete={completeOnboarding} />}
+      {showProfileSetup && user && <ProfileSetupModal userId={user.id} onComplete={() => setShowProfileSetup(false)} />}
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-xl font-bold">Wellesley Marketplace</h1>

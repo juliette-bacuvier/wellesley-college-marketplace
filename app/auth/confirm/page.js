@@ -16,7 +16,7 @@ export default function ConfirmPage() {
         setStatus('error')
       } else {
         setStatus('success')
-        setTimeout(() => router.push('/'), 3000)
+        setTimeout(() => router.push('/?setup=true'), 3000)
       }
     }
     handleConfirmation()
@@ -36,9 +36,9 @@ export default function ConfirmPage() {
           <>
             <div className="text-5xl mb-4">🎉</div>
             <h1 className="text-2xl font-bold text-blue-900 mb-2">You're verified!</h1>
-            <p className="text-gray-500 mb-6">Your Wellesley email has been confirmed. Redirecting you to the marketplace...</p>
-            <Link href="/" className="inline-block bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition">
-              Go to Marketplace
+            <p className="text-gray-500 mb-6">Your Wellesley email has been confirmed. Let's set up your profile...</p>
+            <Link href="/?setup=true" className="inline-block bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition">
+              Set Up My Profile →
             </Link>
           </>
         )}
