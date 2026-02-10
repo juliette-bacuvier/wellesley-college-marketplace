@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import OnboardingModal from './components/OnboardingModal'
 
 export default function Home() {
   const [listings, setListings] = useState([])
@@ -24,6 +25,7 @@ export default function Home() {
   const [announcements, setAnnouncements] = useState([])
   const [adminIds, setAdminIds] = useState(new Set())
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(false)
   const router = useRouter()
 
   const categories = ['Textbooks', 'Furniture', 'Electronics', 'Clothing', 'Kitchen & Appliances', 'Decor', 'Sports & Fitness', 'Other']
@@ -37,6 +39,7 @@ export default function Home() {
         fetchPendingOffers(user.id)
         fetchUnreadMessages(user.id)
         checkAdminStatus(user.id)
+        checkOnboarding(user.id)
       }
       setLoading(false)
     })
@@ -57,6 +60,31 @@ export default function Home() {
       setIsAdmin(!!data)
     } catch (error) {
       setIsAdmin(false)
+    }
+  }
+
+  const checkOnboarding = async (userId) => {
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('has_seen_onboarding')
+        .eq('id', userId)
+        .single()
+      if (data && !data.has_seen_onboarding) {
+        setShowOnboarding(true)
+      }
+    } catch (error) {
+      console.error('Error checking onboarding:', error)
+    }
+  }
+
+  const completeOnboarding = async () => {
+    setShowOnboarding(false)
+    if (user) {
+      await supabase
+        .from('profiles')
+        .update({ has_seen_onboarding: true })
+        .eq('id', user.id)
     }
   }
 
@@ -291,7 +319,6 @@ export default function Home() {
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
 
-  // Landing page for non-logged in users
   if (!user) return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm">
@@ -366,6 +393,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {showOnboarding && <OnboardingModal onComplete={completeOnboarding} />}
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-xl font-bold">Wellesley Marketplace</h1>
