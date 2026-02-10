@@ -21,6 +21,7 @@ export default function Home() {
   const [likedCount, setLikedCount] = useState(0)
   const [pendingOffersCount, setPendingOffersCount] = useState(0)
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0)
+  const [unreadAnnouncementsCount, setUnreadAnnouncementsCount] = useState(0)
   const [isAdmin, setIsAdmin] = useState(false)
   const [announcements, setAnnouncements] = useState([])
   const [adminIds, setAdminIds] = useState(new Set())
@@ -101,9 +102,17 @@ export default function Home() {
     try {
       const { data } = await supabase.from('announcements').select('*').eq('is_active', true).order('created_at', { ascending: false })
       setAnnouncements(data || [])
+      calculateUnreadAnnouncements(data || [])
+      calculateUnreadAnnouncements(data || [])
     } catch (error) {
       console.error('Error fetching announcements:', error)
     }
+  }
+
+  const calculateUnreadAnnouncements = (announcements) => {
+    const readIds = JSON.parse(localStorage.getItem('readAnnouncements') || '[]')
+    const unread = announcements.filter(a => !readIds.includes(a.id))
+    setUnreadAnnouncementsCount(unread.length)
   }
 
   const fetchPendingOffers = async (userId) => {
@@ -399,7 +408,13 @@ export default function Home() {
           <h1 className="text-xl font-bold">Wellesley Marketplace</h1>
           <div className="hidden md:flex items-center gap-5">
             <Link href="/help" className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 font-bold" title="Help">?</Link>
-            <Link href="/my-listings" className="relative text-gray-600 hover:text-gray-900 text-sm font-medium">
+<Link href="/announcements" className="relative text-2xl" title="Announcements">
+  🔔
+  {unreadAnnouncementsCount > 0 && (
+    <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{unreadAnnouncementsCount}</span>
+  )}
+</Link>            
+<Link href="/my-listings" className="relative text-gray-600 hover:text-gray-900 text-sm font-medium">
               My Listings
               {pendingOffersCount > 0 && (
                 <span className="absolute -top-2 -right-3 bg-red-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{pendingOffersCount}</span>
@@ -433,7 +448,11 @@ export default function Home() {
         {mobileMenuOpen && (
           <div className="md:hidden bg-white border-t px-4 py-4 space-y-3">
             <Link href="/help" className="block text-gray-600 hover:text-gray-900 py-2 border-b" onClick={() => setMobileMenuOpen(false)}>❓ Help</Link>
-            <Link href="/my-listings" className="flex justify-between text-gray-600 hover:text-gray-900 py-2 border-b" onClick={() => setMobileMenuOpen(false)}>
+<Link href="/announcements" className="flex justify-between text-gray-600 hover:text-gray-900 py-2 border-b" onClick={() => setMobileMenuOpen(false)}>
+  🔔 Announcements
+  {unreadAnnouncementsCount > 0 && <span className="bg-red-600 text-white text-xs font-bold rounded-full px-2 py-0.5">{unreadAnnouncementsCount}</span>}
+</Link>            
+<Link href="/my-listings" className="flex justify-between text-gray-600 hover:text-gray-900 py-2 border-b" onClick={() => setMobileMenuOpen(false)}>
               My Listings
               {pendingOffersCount > 0 && <span className="bg-red-600 text-white text-xs font-bold rounded-full px-2 py-0.5">{pendingOffersCount}</span>}
             </Link>
@@ -454,16 +473,7 @@ export default function Home() {
         )}
       </nav>
 
-      {announcements.length > 0 && (
-        <div className="bg-white border-b">
-          <div className="max-w-7xl mx-auto px-4 py-3">
-            {announcements.map((announcement) => (
-              <div key={announcement.id} className={`border-l-4 p-4 mb-2 rounded ${getAnnouncementStyle(announcement.type)}`}>
-                <h3 className="font-bold mb-1">{announcement.title}</h3>
-                <p className="text-sm">{announcement.message}</p>
-              </div>
-            ))}
-          </div>
+                </div>
         </div>
       )}
 
