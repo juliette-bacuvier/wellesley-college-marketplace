@@ -294,13 +294,34 @@ export default function ListingPage() {
 
             {images.length > 0 && (
               <div className="mb-4">
-                <img
-                  src={images[activeImage]}
-                  alt={listing.title}
-                  className="w-full h-64 object-cover rounded-md mb-2"
-                />
+                <div className="relative">
+                  <img
+                    src={images[activeImage]}
+                    alt={listing.title}
+                    className="w-full h-80 object-cover rounded-md mb-2"
+                  />
+                  {images.length > 1 && (
+                    <>
+                      <button
+                        onClick={() => setActiveImage((activeImage - 1 + images.length) % images.length)}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full w-9 h-9 flex items-center justify-center hover:bg-opacity-75 transition text-lg"
+                      >
+                        ‹
+                      </button>
+                      <button
+                        onClick={() => setActiveImage((activeImage + 1) % images.length)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full w-9 h-9 flex items-center justify-center hover:bg-opacity-75 transition text-lg"
+                      >
+                        ›
+                      </button>
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded-full">
+                        {activeImage + 1} / {images.length}
+                      </div>
+                    </>
+                  )}
+                </div>
                 {images.length > 1 && (
-                  <div className="flex gap-2 overflow-x-auto">
+                  <div className="flex gap-2 overflow-x-auto mt-2">
                     {images.map((img, index) => (
                       <img
                         key={index}
