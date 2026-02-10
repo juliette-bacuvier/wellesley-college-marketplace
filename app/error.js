@@ -17,27 +17,12 @@ export default function Error({ error, reset }) {
           An unexpected error occurred. You can try again, or head back to the marketplace.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
-          <button
-            onClick={reset}
-            className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition"
-          >
-            Try Again
-          </button>
-          <Link
-            href="/"
-            className="bg-gray-100 text-gray-700 px-6 py-3 rounded-xl font-semibold hover:bg-gray-200 transition"
-          >
-            ← Back to Marketplace
-          </Link>
+          <button onClick={reset} className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition">Try Again</button>
+          <Link href="/" className="bg-gray-100 text-gray-700 px-6 py-3 rounded-xl font-semibold hover:bg-gray-200 transition">Back to Marketplace</Link>
         </div>
         <div className="border-t pt-5 text-sm text-gray-400">
           <p>If this keeps happening, please reach out:</p>
-          
-            href="mailto:jbacuvier@wellesley.edu"
-            className="text-blue-500 hover:underline font-medium"
-          >
-            jbacuvier@wellesley.edu
-          </a>
+          <a href="mailto:jbacuvier@wellesley.edu" className="text-blue-500 hover:underline font-medium">jbacuvier@wellesley.edu</a>
         </div>
       </div>
     </div>
