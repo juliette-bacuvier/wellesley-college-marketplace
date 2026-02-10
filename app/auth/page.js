@@ -16,7 +16,28 @@ export default function Auth() {
   const [signUpEmail, setSignUpEmail] = useState('')
   const [resendLoading, setResendLoading] = useState(false)
   const [resendMessage, setResendMessage] = useState('')
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
+  const [resetEmail, setResetEmail] = useState('')
+  const [resetLoading, setResetLoading] = useState(false)
+  const [resetMessage, setResetMessage] = useState('')
   const router = useRouter()
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault()
+    setResetLoading(true)
+    setResetMessage('')
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: 'https://wellesley-college-marketplace.vercel.app/auth/reset-password'
+      })
+      if (error) throw error
+      setResetMessage('Password reset email sent! Check your inbox.')
+    } catch (error) {
+      setResetMessage('Error: ' + error.message)
+    } finally {
+      setResetLoading(false)
+    }
+  }
 
   const handleAuth = async (e) => {
     e.preventDefault()
@@ -92,6 +113,60 @@ export default function Auth() {
     } finally {
       setResendLoading(false)
     }
+  }
+
+  if (showForgotPassword) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <nav className="bg-white shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 py-4">
+            <Link href="/" className="text-xl font-bold">Wellesley Finds</Link>
+          </div>
+        </nav>
+        <div className="flex-1 flex items-center justify-center px-4 py-12">
+          <div className="bg-white rounded-xl shadow-md p-8 w-full max-w-md">
+            <h1 className="text-3xl font-bold mb-2 text-center">Reset Password</h1>
+            <p className="text-gray-500 text-center mb-6">Enter your @wellesley.edu email and we'll send you a reset link.</p>
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Email</label>
+                <input
+                  type="email"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 border rounded-md"
+                  placeholder="yourname@wellesley.edu"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={resetLoading}
+                className="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 disabled:opacity-50 font-medium"
+              >
+                {resetLoading ? 'Sending...' : 'Send Reset Link'}
+              </button>
+              {resetMessage && (
+                <p className={`text-center text-sm ${resetMessage.includes('sent') ? 'text-green-600' : 'text-red-600'}`}>
+                  {resetMessage}
+                </p>
+              )}
+            </form>
+            <button
+              onClick={() => { setShowForgotPassword(false); setResetMessage(''); setResetEmail('') }}
+              className="mt-4 text-gray-500 hover:text-gray-700 text-sm hover:underline block w-full text-center"
+            >
+              Back to Sign In
+            </button>
+          </div>
+        </div>
+        <footer className="bg-white border-t py-6">
+          <div className="max-w-7xl mx-auto px-4 text-center">
+            <p className="text-gray-500 text-sm">Made with 💙 by Juliette Bacuvier • Wellesley College Class of 2026</p>
+          </div>
+        </footer>
+      </div>
+    )
   }
 
   if (message === 'go_check_email') {
@@ -277,6 +352,16 @@ export default function Auth() {
             >
               {loading ? 'Loading...' : isSignUp ? 'Create Account' : 'Sign In'}
             </button>
+
+            {!isSignUp && (
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                className="w-full text-center text-sm text-gray-500 hover:text-blue-600 hover:underline"
+              >
+                Forgot your password?
+              </button>
+            )}
 
             {message && message !== 'go_check_email' && (
               <p className={`text-center text-sm ${messageType === 'success' ? 'text-green-600' : 'text-red-600'}`}>
