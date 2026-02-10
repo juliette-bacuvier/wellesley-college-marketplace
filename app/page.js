@@ -708,12 +708,7 @@ export default function Home() {
                     >
                       💬 Message / Make Offer
                     </Link>
-                    
-                      href={`mailto:${selectedListing.profiles?.email}?subject=Interest in: ${encodeURIComponent(selectedListing.title)}`}
-                      className="bg-gray-100 text-gray-700 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-gray-200 transition text-center"
-                    >
-                      📧 Email Seller
-                    </a>
+                    <a href={`mailto:${selectedListing.profiles?.email}?subject=Interest in: ${encodeURIComponent(selectedListing.title)}`} className="bg-gray-100 text-gray-700 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-gray-200 transition text-center">📧 Email Seller</a>
                     {selectedListing.profiles?.phone && (
                       
                         href={`sms:${selectedListing.profiles?.phone}?body=Hi, I'm interested in your listing: ${encodeURIComponent(selectedListing.title)}`}
