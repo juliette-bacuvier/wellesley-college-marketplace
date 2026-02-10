@@ -32,14 +32,13 @@ export default function Home() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user)
-      if (!user) {
-        router.push('/auth')
-      } else {
+      if (user) {
         fetchUserLikes(user.id)
         fetchPendingOffers(user.id)
         fetchUnreadMessages(user.id)
         checkAdminStatus(user.id)
       }
+      setLoading(false)
     })
     fetchListings()
     fetchLikeCounts()
@@ -181,8 +180,6 @@ export default function Home() {
       setListings(listingsWithProfiles)
     } catch (error) {
       console.error('Error fetching listings:', error)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -281,7 +278,7 @@ export default function Home() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
-    router.push('/auth')
+    router.push('/')
   }
 
   const getAnnouncementStyle = (type) => {
@@ -294,13 +291,81 @@ export default function Home() {
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
 
+  // Landing page for non-logged in users
+  if (!user) return (
+    <div className="min-h-screen bg-gray-50">
+      <nav className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Wellesley Marketplace</h1>
+          <Link href="/auth" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium">
+            Sign In / Sign Up
+          </Link>
+        </div>
+      </nav>
+
+      <main className="max-w-4xl mx-auto px-4 py-16">
+        <div className="text-center mb-16">
+          <h2 className="text-5xl font-bold mb-6">Welcome to the Wellesley College Marketplace! 💙</h2>
+          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+            The easiest way for Wellesley students to buy and sell items within our campus community. From furniture to textbooks, find great deals from fellow Wellesley sibs!
+          </p>
+          <Link href="/auth" className="bg-blue-600 text-white px-8 py-4 rounded-md hover:bg-blue-700 text-xl font-medium inline-block">
+            Get Started →
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+          <div className="bg-white rounded-xl shadow-md p-6 text-center">
+            <div className="text-4xl mb-4">🛍️</div>
+            <h3 className="text-xl font-bold mb-2">Buy</h3>
+            <p className="text-gray-600">Browse listings from fellow Wellesley students. Find furniture, textbooks, electronics and more at great prices.</p>
+          </div>
+          <div className="bg-white rounded-xl shadow-md p-6 text-center">
+            <div className="text-4xl mb-4">💰</div>
+            <h3 className="text-xl font-bold mb-2">Sell</h3>
+            <p className="text-gray-600">Declutter before moving out! List your items in minutes and connect directly with buyers on campus.</p>
+          </div>
+          <div className="bg-white rounded-xl shadow-md p-6 text-center">
+            <div className="text-4xl mb-4">💬</div>
+            <h3 className="text-xl font-bold mb-2">Connect</h3>
+            <p className="text-gray-600">Message sellers, make offers, and arrange pickups - all within our safe, Wellesley-only platform.</p>
+          </div>
+        </div>
+
+        <div className="bg-blue-50 rounded-xl p-8 text-center mb-8">
+          <h3 className="text-2xl font-bold mb-4">Wellesley Students Only 🔒</h3>
+          <p className="text-gray-600 mb-6">
+            This platform is exclusively for Wellesley College students. You must have a valid <strong>@wellesley.edu</strong> email address to sign up.
+          </p>
+          <Link href="/auth" className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 font-medium inline-block">
+            Sign Up Now
+          </Link>
+        </div>
+
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+          <h3 className="text-lg font-bold text-red-800 mb-2">⚠️ Important Notice</h3>
+          <p className="text-red-700 text-sm">
+            This platform is strictly for legal goods only. The sale or trade of illegal items, controlled substances, weapons, or any other prohibited goods is strictly forbidden and <strong>will be reported to Wellesley College administration and law enforcement</strong>. By using this platform, you agree to our community guidelines and code of conduct.
+          </p>
+        </div>
+      </main>
+
+      <footer className="bg-white border-t mt-12 py-6">
+        <div className="max-w-7xl mx-auto px-4 text-center space-y-2">
+          <p className="text-gray-500 text-sm">Made with 💙 by Juliette Bacuvier • Wellesley College Class of 2026</p>
+          <a href="https://buymeacoffee.com/jbacuvier" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
+            ☕ Buy me a coffee!
+          </a>
+        </div>
+      </footer>
+    </div>
+  )
+
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-xl font-bold">Wellesley Marketplace</h1>
-
-          {/* Desktop menu */}
           <div className="hidden md:flex items-center gap-5">
             <Link href="/help" className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 font-bold" title="Help">?</Link>
             <Link href="/my-listings" className="relative text-gray-600 hover:text-gray-900 text-sm font-medium">
@@ -327,8 +392,6 @@ export default function Home() {
             {isAdmin && <Link href="/admin" className="text-2xl" title="Admin Dashboard">⭐</Link>}
             <button onClick={handleSignOut} className="text-gray-600 hover:text-gray-900 text-sm">Sign Out</button>
           </div>
-
-          {/* Mobile hamburger */}
           <button className="md:hidden flex flex-col gap-1 p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             <span className="block w-6 h-0.5 bg-gray-600"></span>
             <span className="block w-6 h-0.5 bg-gray-600"></span>
@@ -336,7 +399,6 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Mobile dropdown */}
         {mobileMenuOpen && (
           <div className="md:hidden bg-white border-t px-4 py-4 space-y-3">
             <Link href="/help" className="block text-gray-600 hover:text-gray-900 py-2 border-b" onClick={() => setMobileMenuOpen(false)}>❓ Help</Link>
@@ -361,7 +423,6 @@ export default function Home() {
         )}
       </nav>
 
-      {/* Announcements */}
       {announcements.length > 0 && (
         <div className="bg-white border-b">
           <div className="max-w-7xl mx-auto px-4 py-3">
@@ -507,8 +568,9 @@ export default function Home() {
       </main>
 
       <footer className="bg-white border-t mt-12 py-6">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <a href="https://buymeacoffee.com/jbacuvier" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+        <div className="max-w-7xl mx-auto px-4 text-center space-y-2">
+          <p className="text-gray-500 text-sm">Made with 💙 by Juliette Bacuvier • Wellesley College Class of 2026</p>
+          <a href="https://buymeacoffee.com/jbacuvier" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
             ☕ Buy me a coffee!
           </a>
         </div>
