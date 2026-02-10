@@ -18,6 +18,9 @@ export default function Home() {
   const [likeCounts, setLikeCounts] = useState({})
   const [likedCount, setLikedCount] = useState(0)
   const [pendingOffersCount, setPendingOffersCount] = useState(0)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [announcements, setAnnouncements] = useState([])
+  const [adminIds, setAdminIds] = useState(new Set())
   const router = useRouter()
 
   const categories = ['Textbooks', 'Furniture', 'Electronics', 'Clothing', 'Kitchen & Appliances', 'Decor', 'Sports & Fitness', 'Other']
@@ -31,20 +34,64 @@ export default function Home() {
       } else {
         fetchUserLikes(user.id)
         fetchPendingOffers(user.id)
+        checkAdminStatus(user.id)
       }
     })
     fetchListings()
     fetchLikeCounts()
     autoArchiveOldListings()
+    fetchAnnouncements()
+    fetchAdmins()
   }, [])
 
   useEffect(() => {
     filterListings()
   }, [listings, searchTerm, selectedCategory, selectedDorm, showSold, showFreeOnly])
 
+  const checkAdminStatus = async (userId) => {
+    try {
+      const { data } = await supabase
+        .from('admins')
+        .select('*')
+        .eq('user_id', userId)
+        .single()
+
+      setIsAdmin(!!data)
+    } catch (error) {
+      setIsAdmin(false)
+    }
+  }
+
+  const fetchAdmins = async () => {
+    try {
+      const { data } = await supabase
+        .from('admins')
+        .select('user_id')
+
+      if (data) {
+        setAdminIds(new Set(data.map(admin => admin.user_id)))
+      }
+    } catch (error) {
+      console.error('Error fetching admins:', error)
+    }
+  }
+
+  const fetchAnnouncements = async () => {
+    try {
+      const { data } = await supabase
+        .from('announcements')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+
+      setAnnouncements(data || [])
+    } catch (error) {
+      console.error('Error fetching announcements:', error)
+    }
+  }
+
   const fetchPendingOffers = async (userId) => {
     try {
-      // Get user's listings
       const { data: userListings } = await supabase
         .from('listings')
         .select('id')
@@ -54,7 +101,6 @@ export default function Home() {
 
       const listingIds = userListings.map(l => l.id)
 
-      // Get pending offers for user's listings
       const { data: offers } = await supabase
         .from('offers')
         .select('id')
@@ -308,6 +354,17 @@ export default function Home() {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>
   }
 
+  const getAnnouncementStyle = (type) => {
+    switch(type) {
+      case 'warning':
+        return 'bg-yellow-100 border-yellow-500 text-yellow-900'
+      case 'maintenance':
+        return 'bg-red-100 border-red-500 text-red-900'
+      default:
+        return 'bg-blue-100 border-blue-500 text-blue-900'
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm">
@@ -342,12 +399,30 @@ export default function Home() {
             <Link href="/profile" className="text-gray-600 hover:text-gray-900 text-2xl" title="My Profile">
               👤
             </Link>
+            {isAdmin && (
+              <Link href="/admin" className="text-yellow-600 hover:text-yellow-700 text-2xl" title="Admin Dashboard">
+                ⭐
+              </Link>
+            )}
             <button onClick={handleSignOut} className="text-gray-600 hover:text-gray-900">
               Sign Out
             </button>
           </div>
         </div>
       </nav>
+
+      {announcements.length > 0 && (
+        <div className="bg-white border-b">
+          <div className="max-w-7xl mx-auto px-4 py-3">
+            {announcements.map((announcement) => (
+              <div key={announcement.id} className={`border-l-4 p-4 mb-2 rounded ${getAnnouncementStyle(announcement.type)}`}>
+                <h3 className="font-bold mb-1">{announcement.title}</h3>
+                <p className="text-sm">{announcement.message}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-6 space-y-4">
@@ -481,7 +556,10 @@ export default function Home() {
                   <p className="text-sm text-gray-500">Payment: {listing.payment_method}</p>
                   {!listing.is_sold && (
                     <div className="mt-3 pt-3 border-t space-y-2">
-                      <p className="text-xs text-gray-400">Seller: {listing.profiles?.name}</p>
+                      <p className="text-xs text-gray-400">
+                        Seller: {listing.profiles?.name}
+                        {adminIds.has(listing.user_id) && <span className="ml-1">⭐</span>}
+                      </p>
                       <div className="flex flex-col gap-1">
                         <Link
                           href={`/listing/${listing.id}`}
