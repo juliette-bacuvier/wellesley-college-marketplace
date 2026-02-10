@@ -225,7 +225,7 @@ export default function Home() {
 
   const fetchListings = async () => {
     try {
-      const { data, error } = await supabase.from('listings').select('*').eq('is_archived', false).order('created_at', { ascending: false })
+      const { data, error } = await supabase.from('listings').select('*').eq('is_archived', false).eq('is_draft', false).order('created_at', { ascending: false })
       if (error) throw error
       const listingsWithProfiles = await Promise.all((data || []).map(async (listing) => {
         const { data: profile } = await supabase.from('profiles').select('name, email, phone, class_year, graduation_term').eq('id', listing.user_id).single()
