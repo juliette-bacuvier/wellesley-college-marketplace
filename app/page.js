@@ -27,6 +27,7 @@ export default function Home() {
   const [announcements, setAnnouncements] = useState([])
   const [adminIds, setAdminIds] = useState(new Set())
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [selectedListing, setSelectedListing] = useState(null)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showProfileSetup, setShowProfileSetup] = useState(false)
   const router = useRouter()
@@ -532,7 +533,7 @@ export default function Home() {
             {filteredListings.map((listing) => {
               const imageToShow = listing.image_url || listing.extra_images?.[0]?.image_url
               return (
-                <div key={listing.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-200">
+                <div key={listing.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-200 cursor-pointer" onClick={() => setSelectedListing(listing)}>
                   {imageToShow && (
                     <div className="relative">
                       <img src={imageToShow} alt={listing.title} className={`w-full h-48 object-cover ${listing.is_sold ? 'grayscale' : ''}`} />
@@ -634,6 +635,103 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Listing Detail Modal */}
+      {selectedListing && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center px-4 py-8" onClick={() => setSelectedListing(null)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-screen overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex justify-between items-start p-6 border-b">
+              <h2 className="text-2xl font-bold pr-4">{selectedListing.title}</h2>
+              <button onClick={() => setSelectedListing(null)} className="text-gray-400 hover:text-gray-600 text-2xl flex-shrink-0">✕</button>
+            </div>
+
+            {/* Image */}
+            {(selectedListing.image_url || selectedListing.extra_images?.[0]?.image_url) && (
+              <img
+                src={selectedListing.image_url || selectedListing.extra_images?.[0]?.image_url}
+                alt={selectedListing.title}
+                className="w-full h-72 object-cover"
+              />
+            )}
+
+            <div className="p-6 space-y-4">
+              {/* Price */}
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="text-3xl font-bold text-green-600">
+                  {selectedListing.is_free ? 'FREE' : `$${selectedListing.price}`}
+                </span>
+                {selectedListing.original_price && !selectedListing.is_free && (
+                  <span className="text-gray-400 line-through text-lg">${selectedListing.original_price}</span>
+                )}
+                {selectedListing.is_negotiable && (
+                  <span className="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded-full">💜 Negotiable</span>
+                )}
+              </div>
+
+              {/* Badges */}
+              <div className="flex flex-wrap gap-2">
+                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">{selectedListing.category}</span>
+                <span className={`text-xs px-2 py-1 rounded-full font-medium ${getConditionStyle(selectedListing.condition)}`}>
+                  {getConditionLabel(selectedListing.condition)}
+                </span>
+                {getYearLevelBadge(selectedListing.profiles?.class_year, selectedListing.profiles?.graduation_term)}
+              </div>
+
+              {/* Description */}
+              {selectedListing.description && (
+                <p className="text-gray-700">{selectedListing.description}</p>
+              )}
+
+              {/* Details */}
+              <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
+                <p className="text-gray-600">📍 <strong>Location:</strong> {selectedListing.dorm}</p>
+                <p className="text-gray-600">💳 <strong>Payment:</strong> {selectedListing.payment_method}</p>
+                {selectedListing.available_on && <p className="text-gray-600">📅 <strong>Available:</strong> {selectedListing.available_on}</p>}
+                {selectedListing.needs_to_be_gone_by && (
+                  <p className="text-red-600 font-semibold">⚠️ <strong>Gone by:</strong> {new Date(selectedListing.needs_to_be_gone_by).toLocaleDateString()}</p>
+                )}
+              </div>
+
+              {/* Seller */}
+              <div className="border-t pt-4">
+                <p className="text-sm text-gray-500 mb-3">
+                  Seller: <strong>{selectedListing.profiles?.name}</strong>
+                  {adminIds.has(selectedListing.user_id) && <span className="ml-1">⭐</span>}
+                </p>
+                {!selectedListing.is_sold && (
+                  <div className="flex flex-col gap-2">
+                    <Link
+                      href={`/listing/${selectedListing.id}`}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-blue-700 transition text-center"
+                      onClick={() => setSelectedListing(null)}
+                    >
+                      💬 Message / Make Offer
+                    </Link>
+                    
+                      href={`mailto:${selectedListing.profiles?.email}?subject=Interest in: ${encodeURIComponent(selectedListing.title)}`}
+                      className="bg-gray-100 text-gray-700 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-gray-200 transition text-center"
+                    >
+                      📧 Email Seller
+                    </a>
+                    {selectedListing.profiles?.phone && (
+                      
+                        href={`sms:${selectedListing.profiles?.phone}?body=Hi, I'm interested in your listing: ${encodeURIComponent(selectedListing.title)}`}
+                        className="bg-gray-100 text-gray-700 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-gray-200 transition text-center"
+                      >
+                        💬 Text Seller
+                      </a>
+                    )}
+                  </div>
+                )}
+                {selectedListing.is_sold && (
+                  <p className="text-red-600 font-bold text-center py-2">This item is SOLD</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
