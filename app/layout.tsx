@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Wellesley College Marketplace",
-  description: "Buy and sell items within the Wellesley College community. Exclusively for Wellesley students.",
+  title: "Wellesley Finds",
+  description: "Buy, sell and find great deals within the Wellesley College community. Exclusively for Wellesley students.",
 };
 
 export default function RootLayout({

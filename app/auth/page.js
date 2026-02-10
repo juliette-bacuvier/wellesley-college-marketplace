@@ -76,7 +76,7 @@ export default function Auth() {
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <nav className="bg-white shadow-sm">
           <div className="max-w-7xl mx-auto px-4 py-4">
-            <Link href="/" className="text-xl font-bold">Wellesley Marketplace</Link>
+            <Link href="/" className="text-xl font-bold">Wellesley Finds</Link>
           </div>
         </nav>
 
@@ -141,7 +141,7 @@ export default function Auth() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <Link href="/" className="text-xl font-bold">Wellesley Marketplace</Link>
+          <Link href="/" className="text-xl font-bold">Wellesley Finds</Link>
         </div>
       </nav>
 
@@ -151,7 +151,7 @@ export default function Auth() {
             {isSignUp ? 'Create Account' : 'Welcome Back'}
           </h1>
           <p className="text-gray-500 text-center mb-6">
-            {isSignUp ? 'Join the Wellesley Marketplace' : 'Sign in to your account'}
+            {isSignUp ? 'Join the Wellesley Finds' : 'Sign in to your account'}
           </p>
 
           <form onSubmit={handleAuth} className="space-y-4">

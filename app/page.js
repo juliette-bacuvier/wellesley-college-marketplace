@@ -350,7 +350,7 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Wellesley Marketplace</h1>
+          <h1 className="text-2xl font-bold">Wellesley Finds</h1>
           <Link href="/auth" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium">
             Sign In / Sign Up
           </Link>
@@ -359,7 +359,7 @@ export default function Home() {
 
       <main className="max-w-4xl mx-auto px-4 py-16">
         <div className="text-center mb-16">
-          <h2 className="text-5xl font-bold mb-6">Welcome to the Wellesley College Marketplace! 💙</h2>
+          <h2 className="text-5xl font-bold mb-6">Welcome to the Wellesley Finds! 💙</h2>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
             The easiest way for Wellesley students to buy and sell items within our campus community. From furniture to textbooks, find great deals from fellow Wellesley sibs!
           </p>
@@ -424,7 +424,7 @@ export default function Home() {
       {showProfileSetup && user && <ProfileSetupModal userId={user.id} onComplete={() => setShowProfileSetup(false)} />}
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-xl font-bold">Wellesley Marketplace</h1>
+          <h1 className="text-xl font-bold">Wellesley Finds</h1>
           <div className="hidden md:flex items-center gap-5">
             <Link href="/help" className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 font-bold" title="Help">?</Link>
 <Link href="/announcements" className="relative text-2xl" title="Announcements">

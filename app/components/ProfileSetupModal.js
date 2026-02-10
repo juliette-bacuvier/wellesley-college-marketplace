@@ -41,7 +41,7 @@ export default function ProfileSetupModal({ userId, onComplete }) {
       <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
         <div className="text-center mb-6">
           <div className="text-5xl mb-3">👋</div>
-          <h2 className="text-2xl font-bold text-blue-900">Welcome to the Wellesley Marketplace!</h2>
+          <h2 className="text-2xl font-bold text-blue-900">Welcome to the Wellesley Finds!</h2>
           <p className="text-gray-500 mt-2 text-sm">Let's set up your profile so other students know who they're buying from.</p>
         </div>
 

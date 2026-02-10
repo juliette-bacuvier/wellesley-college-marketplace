@@ -4,7 +4,7 @@ import { useState } from 'react'
 const steps = [
   {
     emoji: '👋',
-    title: 'Welcome to Wellesley Marketplace!',
+    title: 'Welcome to Wellesley Finds!',
     description: 'Your one-stop shop for buying and selling within the Wellesley community. Here\'s a quick tour to get you started!',
   },
   {
@@ -35,12 +35,12 @@ const steps = [
   {
     emoji: '⚠️',
     title: 'Community Rules',
-    description: 'This platform is for legal goods only. Be honest, be kind, and honor your commitments. Violations will be reported to administration and law enforcement. Let\'s keep Wellesley Marketplace safe for everyone!',
+    description: 'This platform is for legal goods only. Be honest, be kind, and honor your commitments. Violations will be reported to administration and law enforcement. Let\'s keep Wellesley Finds safe for everyone!',
   },
   {
     emoji: '🎉',
     title: 'You\'re all set!',
-    description: 'Welcome to the Wellesley Marketplace community! Start by completing your profile, then browse listings or create your first one. Happy buying and selling! 💙',
+    description: 'Welcome to the Wellesley Finds community! Start by completing your profile, then browse listings or create your first one. Happy buying and selling! 💙',
   },
 ]
 

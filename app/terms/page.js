@@ -5,7 +5,7 @@ export default function Terms() {
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <Link href="/" className="text-xl font-bold">Wellesley Marketplace</Link>
+          <Link href="/" className="text-xl font-bold">Wellesley Finds</Link>
         </div>
       </nav>
 
@@ -17,7 +17,7 @@ export default function Terms() {
 
           <section>
             <h2 className="text-xl font-bold text-gray-900 mb-3">1. Acceptance of Terms</h2>
-            <p>By accessing or using the Wellesley College Marketplace ("the Platform"), you agree to be bound by these Terms of Use. If you do not agree to these terms, you may not use the Platform. These terms may be updated at any time without prior notice, and continued use of the Platform constitutes acceptance of any changes.</p>
+            <p>By accessing or using the Wellesley Finds ("the Platform"), you agree to be bound by these Terms of Use. If you do not agree to these terms, you may not use the Platform. These terms may be updated at any time without prior notice, and continued use of the Platform constitutes acceptance of any changes.</p>
           </section>
 
           <section>
@@ -27,7 +27,7 @@ export default function Terms() {
 
           <section>
             <h2 className="text-xl font-bold text-gray-900 mb-3">3. Platform Role & Limitation of Liability</h2>
-            <p className="mb-3">The Wellesley College Marketplace is an <strong>independent, student-run platform</strong> and is <strong>not affiliated with, endorsed by, or operated by Wellesley College</strong>. The Platform serves solely as a venue for users to post and discover listings. The Platform operator:</p>
+            <p className="mb-3">The Wellesley Finds is an <strong>independent, student-run platform</strong> and is <strong>not affiliated with, endorsed by, or operated by Wellesley College</strong>. The Platform serves solely as a venue for users to post and discover listings. The Platform operator:</p>
             <ul className="list-disc list-inside space-y-2 text-gray-600">
               <li>Is <strong>not a party</strong> to any transaction between buyers and sellers</li>
               <li>Does <strong>not verify</strong> the accuracy, legality, or quality of any listings</li>
@@ -122,7 +122,7 @@ export default function Terms() {
 
           <div className="border-t pt-6">
             <p className="text-sm text-gray-500 text-center">
-              By using the Wellesley College Marketplace, you acknowledge that you have read, understood, and agree to these Terms of Use.
+              By using the Wellesley Finds, you acknowledge that you have read, understood, and agree to these Terms of Use.
             </p>
           </div>
         </div>

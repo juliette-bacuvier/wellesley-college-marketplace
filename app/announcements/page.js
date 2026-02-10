@@ -64,7 +64,7 @@ export default function AnnouncementsPage() {
 
       <main className="max-w-3xl mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-2">📢 Announcements</h1>
-        <p className="text-gray-500 mb-8">Updates and news from the Wellesley Marketplace team.</p>
+        <p className="text-gray-500 mb-8">Updates and news from the Wellesley Finds team.</p>
 
         {announcements.length === 0 ? (
           <div className="bg-white rounded-xl shadow-md p-12 text-center">
