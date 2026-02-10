@@ -30,6 +30,7 @@ export default function MyListings() {
   const [conversations, setConversations] = useState({})
   const [likeCounts, setLikeCounts] = useState({})
   const [activeTab, setActiveTab] = useState('active')
+  const [viewMode, setViewMode] = useState('card')
   const [dashboard, setDashboard] = useState({
     totalActive: 0,
     totalSold: 0,
@@ -350,7 +351,23 @@ export default function MyListings() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <h2 className="text-3xl font-bold mb-6">Your Listings</h2>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-3xl font-bold">Your Listings</h2>
+          <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
+            <button
+              onClick={() => setViewMode('card')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${viewMode === 'card' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              🃏 Cards
+            </button>
+            <button
+              onClick={() => setViewMode('table')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${viewMode === 'table' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              📊 Table
+            </button>
+          </div>
+        </div>
 
         {/* Seller Dashboard */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -419,6 +436,71 @@ export default function MyListings() {
                     Create Your First Listing
                   </Link>
                 )}
+              </div>
+            )
+          }
+
+          if (viewMode === 'table') {
+            return (
+              <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-gray-50">
+                      <th className="text-left px-4 py-3 font-semibold text-gray-600">Image</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-600">Title</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-600">Price</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-600">Category</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-600">Condition</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-600">Dorm</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-600">Likes</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-600">Deadline</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-600">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredListings.map((listing) => {
+                      const imageToShow = listing.image_url || listing.extra_images?.[0]?.image_url
+                      return (
+                        <tr key={listing.id} className="border-b hover:bg-gray-50 transition">
+                          <td className="px-4 py-3">
+                            {imageToShow ? (
+                              <img src={imageToShow} alt={listing.title} className="w-12 h-12 object-cover rounded-lg" />
+                            ) : (
+                              <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-xl">📦</div>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <p className="font-semibold text-gray-900 max-w-xs truncate">{listing.title}</p>
+                            {listing.is_sold && <span className="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded">SOLD</span>}
+                            {listing.is_draft && <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">DRAFT</span>}
+                          </td>
+                          <td className="px-4 py-3 font-semibold text-green-600">
+                            {listing.is_free ? 'FREE' : `$${listing.price}`}
+                            {listing.is_negotiable && <span className="block text-xs text-purple-600 font-normal">Negotiable</span>}
+                          </td>
+                          <td className="px-4 py-3 text-gray-600">{listing.category}</td>
+                          <td className="px-4 py-3 text-gray-600 capitalize">{listing.condition?.replace('_', ' ')}</td>
+                          <td className="px-4 py-3 text-gray-600">{listing.dorm}</td>
+                          <td className="px-4 py-3 text-pink-600 font-medium">
+                            {likeCounts[listing.id] ? `❤️ ${likeCounts[listing.id]}` : '—'}
+                          </td>
+                          <td className="px-4 py-3 text-red-600 text-xs font-medium">
+                            {listing.needs_to_be_gone_by ? new Date(listing.needs_to_be_gone_by).toLocaleDateString() : '—'}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex gap-1.5">
+                              <button onClick={() => startEdit(listing)} className="bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 text-xs font-medium">✏️ Edit</button>
+                              <button onClick={() => toggleSold(listing.id, listing.is_sold)} className={`px-2 py-1 rounded text-xs font-medium ${listing.is_sold ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'}`}>
+                                {listing.is_sold ? '↩️' : '✅'}
+                              </button>
+                              <button onClick={() => handleDelete(listing.id)} className="bg-red-100 text-red-600 px-2 py-1 rounded hover:bg-red-200 text-xs font-medium">🗑️</button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
               </div>
             )
           }
