@@ -13,6 +13,7 @@ export default function MyListings() {
   const [viewingOffersFor, setViewingOffersFor] = useState(null)
   const [offers, setOffers] = useState([])
   const [conversations, setConversations] = useState({})
+  const [likeCounts, setLikeCounts] = useState({})
   const router = useRouter()
 
   const categories = ['Textbooks', 'Furniture', 'Electronics', 'Clothing', 'Kitchen & Appliances', 'Decor', 'Sports & Fitness', 'Other']
@@ -26,6 +27,7 @@ export default function MyListings() {
       } else {
         fetchMyListings(user.id)
         fetchConversations(user.id)
+        fetchLikeCounts()
       }
     })
   }, [])
@@ -69,6 +71,24 @@ export default function MyListings() {
     }
   }
 
+  const fetchLikeCounts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('likes')
+        .select('listing_id')
+      
+      if (error) throw error
+      
+      const counts = {}
+      data.forEach(like => {
+        counts[like.listing_id] = (counts[like.listing_id] || 0) + 1
+      })
+      setLikeCounts(counts)
+    } catch (error) {
+      console.error('Error fetching like counts:', error)
+    }
+  }
+
   const fetchOffersForListing = async (listingId) => {
     try {
       const { data, error } = await supabase
@@ -89,20 +109,17 @@ export default function MyListings() {
     if (!confirm('Accept this offer? This will mark the item as sold.')) return
 
     try {
-      // Update offer status
       await supabase
         .from('offers')
         .update({ status: 'accepted' })
         .eq('id', offerId)
 
-      // Reject all other offers for this listing
       await supabase
         .from('offers')
         .update({ status: 'rejected' })
         .eq('listing_id', listingId)
         .neq('id', offerId)
 
-      // Mark listing as sold and assign buyer
       await supabase
         .from('listings')
         .update({ 
@@ -152,7 +169,6 @@ export default function MyListings() {
           status: 'pending'
         }])
 
-      // Send message about counter-offer
       await supabase
         .from('messages')
         .insert([{
@@ -190,7 +206,6 @@ export default function MyListings() {
     try {
       const updates = { is_sold: !currentStatus }
       if (!currentStatus === false) {
-        // Unmarking as sold, clear buyer
         updates.buyer_id = null
       }
 
@@ -306,7 +321,6 @@ export default function MyListings() {
               <div key={listing.id} className="bg-white rounded-lg shadow-md p-6">
                 {editingId === listing.id ? (
                   <div className="space-y-4">
-                    {/* Edit form - same as before */}
                     <div>
                       <label className="block text-sm font-medium mb-1">Title</label>
                       <input
@@ -492,6 +506,11 @@ export default function MyListings() {
                               💬 {conversations[listing.id].length} interested buyer(s)
                             </p>
                           )}
+                          {likeCounts[listing.id] > 0 && (
+                            <p className="text-pink-600 font-medium">
+                              ❤️ {likeCounts[listing.id]} like{likeCounts[listing.id] !== 1 ? 's' : ''}
+                            </p>
+                          )}
                         </div>
                       </div>
                       {listing.image_url && (
@@ -540,7 +559,6 @@ export default function MyListings() {
                       </button>
                     </div>
 
-                    {/* Offers Modal */}
                     {viewingOffersFor === listing.id && (
                       <div className="mt-4 p-4 bg-gray-50 rounded-md border">
                         <h4 className="font-bold text-lg mb-3">Offers for this listing</h4>
@@ -614,6 +632,19 @@ export default function MyListings() {
           </div>
         )}
       </main>
+
+      <footer className="bg-white border-t mt-12 py-6">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <a 
+            href="https://buymeacoffee.com/jbacuvier" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:underline"
+          >
+            ☕ Buy me a coffee!
+          </a>
+        </div>
+      </footer>
     </div>
   )
 }

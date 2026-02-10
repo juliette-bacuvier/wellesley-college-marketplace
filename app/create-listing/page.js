@@ -13,7 +13,7 @@ export default function CreateListing() {
   const [dorm, setDorm] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('')
   const [availableOn, setAvailableOn] = useState('')
-  const [needsToBeGoneBy, setNeedsToBeGoneBy] = useState('') 
+  const [needsToBeGoneBy, setNeedsToBeGoneBy] = useState('')
   const [image, setImage] = useState(null)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
@@ -124,7 +124,7 @@ export default function CreateListing() {
           dorm,
           payment_method: paymentMethod,
           available_on: availableOn,
-	  needs_to_be_gone_by: needsToBeGoneBy || null,
+          needs_to_be_gone_by: needsToBeGoneBy || null,
           image_url: imageUrl,
           is_free: isFree
         }])
@@ -270,16 +270,16 @@ export default function CreateListing() {
             />
           </div>
 
-<div>
-  <label className="block text-sm font-medium mb-1">Needs to be gone by</label>
-  <input
-    type="date"
-    value={needsToBeGoneBy}
-    onChange={(e) => setNeedsToBeGoneBy(e.target.value)}
-    className="w-full px-3 py-2 border rounded-md"
-  />
-  <p className="text-xs text-gray-500 mt-1">Optional: Set a deadline to prioritize this listing</p>
-</div>	
+          <div>
+            <label className="block text-sm font-medium mb-1">Needs to be gone by</label>
+            <input
+              type="date"
+              value={needsToBeGoneBy}
+              onChange={(e) => setNeedsToBeGoneBy(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md"
+            />
+            <p className="text-xs text-gray-500 mt-1">Optional: Set a deadline to prioritize this listing</p>
+          </div>
 
           <div>
             <label className="block text-sm font-medium mb-1">Payment Method *</label>
@@ -349,6 +349,19 @@ export default function CreateListing() {
           )}
         </form>
       </div>
+
+      <footer className="bg-white border-t mt-12 py-6">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <a 
+            href="https://buymeacoffee.com/jbacuvier" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:underline"
+          >
+            ☕ Buy me a coffee!
+          </a>
+        </div>
+      </footer>
     </div>
   )
 }

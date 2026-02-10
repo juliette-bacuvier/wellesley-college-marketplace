@@ -16,6 +16,7 @@ export default function Home() {
   const [showFreeOnly, setShowFreeOnly] = useState(false)
   const [userLikes, setUserLikes] = useState(new Set())
   const [likeCounts, setLikeCounts] = useState({})
+  const [likedCount, setLikedCount] = useState(0)
   const router = useRouter()
 
   const categories = ['Textbooks', 'Furniture', 'Electronics', 'Clothing', 'Kitchen & Appliances', 'Decor', 'Sports & Fitness', 'Other']
@@ -45,32 +46,23 @@ export default function Home() {
     
     const currentDate = new Date()
     const currentYear = currentDate.getFullYear()
-    const currentMonth = currentDate.getMonth() + 1 // 1-12
+    const currentMonth = currentDate.getMonth() + 1
     
     const gradYear = parseInt(classYear)
     if (isNaN(gradYear)) return { level: '', priority: 6 }
     
-    // Determine if we're in Fall (Aug-Dec) or Spring (Jan-July)
-    const isSpring = currentMonth >= 1 && currentMonth <= 7
-    
     let yearsUntilGrad = gradYear - currentYear
     
-    // Adjust based on term
     if (graduationTerm === 'Winter') {
-      // Winter grads leave in December/January
       if (currentMonth >= 8) {
-        // After August, they're about to graduate
         yearsUntilGrad -= 0.5
       }
     } else if (graduationTerm === 'Spring') {
-      // Spring grads leave in May
       if (currentMonth >= 5) {
-        // After May, they've graduated
         yearsUntilGrad -= 1
       }
     }
     
-    // Determine year level
     if (yearsUntilGrad <= 0.5) {
       return { level: 'Senior', priority: 1 }
     } else if (yearsUntilGrad <= 1.5) {
@@ -116,57 +108,53 @@ export default function Home() {
     }
   }
 
-const fetchListings = async () => {
-  try {
-    const { data, error } = await supabase
-      .from('listings')
-      .select('*')
-      .eq('is_archived', false)
-      .order('created_at', { ascending: false })
-    
-    if (error) {
-      console.error('Supabase error details:', error)
-      throw error
+  const fetchListings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('listings')
+        .select('*')
+        .eq('is_archived', false)
+        .order('created_at', { ascending: false })
+      
+      if (error) {
+        console.error('Supabase error details:', error)
+        throw error
+      }
+      
+      const listingsWithProfiles = await Promise.all((data || []).map(async (listing) => {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('name, email, phone, class_year, graduation_term')
+          .eq('id', listing.user_id)
+          .single()
+        
+        return { ...listing, profiles: profile }
+      }))
+      
+      const sorted = listingsWithProfiles.sort((a, b) => {
+        const today = new Date()
+        const aDeadline = a.needs_to_be_gone_by ? new Date(a.needs_to_be_gone_by) : null
+        const bDeadline = b.needs_to_be_gone_by ? new Date(b.needs_to_be_gone_by) : null
+        
+        const aUrgent = aDeadline && aDeadline <= new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
+        const bUrgent = bDeadline && bDeadline <= new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
+        
+        if (aUrgent && !bUrgent) return -1
+        if (!aUrgent && bUrgent) return 1
+        
+        const aPriority = calculateYearLevel(a.profiles?.class_year, a.profiles?.graduation_term).priority
+        const bPriority = calculateYearLevel(b.profiles?.class_year, b.profiles?.graduation_term).priority
+        
+        return aPriority - bPriority
+      })
+      
+      setListings(sorted)
+    } catch (error) {
+      console.error('Error fetching listings:', error)
+    } finally {
+      setLoading(false)
     }
-    
-    // Fetch profiles separately for each listing
-    const listingsWithProfiles = await Promise.all((data || []).map(async (listing) => {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('name, email, phone, class_year, graduation_term')
-        .eq('id', listing.user_id)
-        .single()
-      
-      return { ...listing, profiles: profile }
-    }))
-    
-    // Sort by priority: needs_to_be_gone_by first, then year level
-    const sorted = listingsWithProfiles.sort((a, b) => {
-      // First priority: items with urgent deadlines
-      const today = new Date()
-      const aDeadline = a.needs_to_be_gone_by ? new Date(a.needs_to_be_gone_by) : null
-      const bDeadline = b.needs_to_be_gone_by ? new Date(b.needs_to_be_gone_by) : null
-      
-      const aUrgent = aDeadline && aDeadline <= new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
-      const bUrgent = bDeadline && bDeadline <= new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
-      
-      if (aUrgent && !bUrgent) return -1
-      if (!aUrgent && bUrgent) return 1
-      
-      // Second priority: year level
-      const aPriority = calculateYearLevel(a.profiles?.class_year, a.profiles?.graduation_term).priority
-      const bPriority = calculateYearLevel(b.profiles?.class_year, b.profiles?.graduation_term).priority
-      
-      return aPriority - bPriority
-    })
-    
-    setListings(sorted)
-  } catch (error) {
-    console.error('Error fetching listings:', error)
-  } finally {
-    setLoading(false)
   }
-}
 
   const fetchUserLikes = async (userId) => {
     try {
@@ -177,6 +165,7 @@ const fetchListings = async () => {
       
       if (error) throw error
       setUserLikes(new Set(data.map(like => like.listing_id)))
+      setLikedCount(data.length)
     } catch (error) {
       console.error('Error fetching likes:', error)
     }
@@ -203,7 +192,6 @@ const fetchListings = async () => {
   const filterListings = () => {
     let filtered = listings
 
-    // Filter out sold items older than 30 days
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
     
@@ -258,6 +246,7 @@ const fetchListings = async () => {
           ...prev,
           [listingId]: (prev[listingId] || 1) - 1
         }))
+        setLikedCount(prev => prev - 1)
       } else {
         const { error } = await supabase
           .from('likes')
@@ -269,6 +258,7 @@ const fetchListings = async () => {
           ...prev,
           [listingId]: (prev[listingId] || 0) + 1
         }))
+        setLikedCount(prev => prev + 1)
       }
     } catch (error) {
       console.error('Error toggling like:', error)
@@ -295,15 +285,23 @@ const fetchListings = async () => {
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold">Wellesley College Marketplace</h1>
-          <div className="space-x-4">
-            <Link href="/help" className="text-gray-600 hover:text-gray-900">
-              Help
+          <div className="flex items-center gap-4">
+            <Link href="/help" className="text-gray-600 hover:text-gray-900 text-2xl" title="Help">
+              ❓
             </Link>
-            <Link href="/profile" className="text-gray-600 hover:text-gray-900">
-              My Profile
+            <Link href="/profile" className="text-gray-600 hover:text-gray-900 text-2xl" title="My Profile">
+              👤
             </Link>
-            <Link href="/my-listings" className="text-gray-600 hover:text-gray-900">
+            <Link href="/my-listings" className="text-gray-600 hover:text-gray-900" title="My Listings">
               My Listings
+            </Link>
+            <Link href="/my-likes" className="relative text-gray-600 hover:text-gray-900 text-2xl" title="My Likes">
+              ❤️
+              {likedCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                  {likedCount}
+                </span>
+              )}
             </Link>
             <Link href="/my-purchases" className="text-gray-600 hover:text-gray-900">
               My Purchases
@@ -489,6 +487,19 @@ const fetchListings = async () => {
           </div>
         )}
       </main>
+
+      <footer className="bg-white border-t mt-12 py-6">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <a 
+            href="https://buymeacoffee.com/jbacuvier" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:underline"
+          >
+            ☕ Buy me a coffee!
+          </a>
+        </div>
+      </footer>
     </div>
   )
 }
