@@ -15,6 +15,7 @@ export default function AdminDashboard() {
     message: '',
     type: 'info'
   })
+  const [reports, setReports] = useState([])
   const [analytics, setAnalytics] = useState({
     totalListings: 0,
     totalUsers: 0,
@@ -56,6 +57,7 @@ export default function AdminDashboard() {
       setIsAdmin(true)
       await fetchAnnouncements()
       await fetchAnalytics()
+      await fetchReports()
     } catch (error) {
       console.error('Error checking admin status:', error)
       router.push('/')
@@ -164,6 +166,44 @@ export default function AdminDashboard() {
       })
     } catch (error) {
       console.error('Error fetching analytics:', error)
+    }
+  }
+
+  const fetchReports = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('reports')
+        .select(`
+          *,
+          listings(id, title),
+          profiles!reports_reporter_id_fkey(name, email)
+        `)
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      setReports(data || [])
+    } catch (error) {
+      console.error('Error fetching reports:', error)
+    }
+  }
+
+  const dismissReport = async (id) => {
+    try {
+      await supabase.from('reports').delete().eq('id', id)
+      setReports(reports.filter(r => r.id !== id))
+    } catch (error) {
+      console.error('Error dismissing report:', error)
+    }
+  }
+
+  const deleteReportedListing = async (listingId, reportId) => {
+    if (!confirm('⚠️ Are you sure you want to delete this listing? This cannot be undone!')) return
+    try {
+      await supabase.from('listings').delete().eq('id', listingId)
+      await supabase.from('reports').delete().eq('id', reportId)
+      setReports(reports.filter(r => r.id !== reportId))
+      alert('Listing deleted.')
+    } catch (error) {
+      console.error('Error deleting listing:', error)
     }
   }
 
@@ -334,6 +374,55 @@ export default function AdminDashboard() {
               )}
             </div>
           </div>
+        </section>
+
+        {/* Reports Section */}
+        <section>
+          <h2 className="text-2xl font-bold mb-4">🚩 Reports {reports.length > 0 && <span className="ml-2 text-sm bg-red-100 text-red-700 px-2 py-1 rounded-full">{reports.length} pending</span>}</h2>
+          {reports.length === 0 ? (
+            <div className="bg-white rounded-lg shadow p-6 text-center text-gray-500">
+              ✅ No reports to review!
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {reports.map((report) => (
+                <div key={report.id} className="bg-white rounded-lg shadow-md p-6 border-l-4 border-red-400">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 className="font-bold text-lg">
+                        {report.listings?.title || 'Deleted listing'}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        Reported by: {report.profiles?.name} ({report.profiles?.email})
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {new Date(report.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="bg-red-50 rounded-md p-3 mb-4">
+                    <p className="text-sm font-medium text-red-800">Reason: {report.reason}</p>
+                    {report.details && <p className="text-sm text-red-700 mt-1">Details: {report.details}</p>}
+                  </div>
+                  <div className="flex gap-2">
+                    {report.listings?.id && (
+                      <>
+                        <Link href={`/listing/${report.listings.id}`} target="_blank" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm">
+                          View Listing
+                        </Link>
+                        <button onClick={() => deleteReportedListing(report.listings.id, report.id)} className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 text-sm">
+                          Delete Listing
+                        </button>
+                      </>
+                    )}
+                    <button onClick={() => dismissReport(report.id)} className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 text-sm">
+                      Dismiss Report
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Announcements Section */}

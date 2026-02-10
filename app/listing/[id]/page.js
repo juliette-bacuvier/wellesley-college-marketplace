@@ -41,6 +41,11 @@ export default function ListingPage() {
   const [offerAmount, setOfferAmount] = useState('')
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
+  const [showReportModal, setShowReportModal] = useState(false)
+  const [reportReason, setReportReason] = useState('')
+  const [reportDetails, setReportDetails] = useState('')
+  const [reportSubmitting, setReportSubmitting] = useState(false)
+  const [reportSuccess, setReportSuccess] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -274,6 +279,34 @@ export default function ListingPage() {
     }
   }
 
+  const submitReport = async () => {
+    if (!reportReason) return
+    setReportSubmitting(true)
+    try {
+      const { error } = await supabase
+        .from('reports')
+        .insert([{
+          listing_id: listingId,
+          reporter_id: user.id,
+          reason: reportReason,
+          details: reportDetails
+        }])
+      if (error) throw error
+      setReportSuccess(true)
+      setTimeout(() => {
+        setShowReportModal(false)
+        setReportSuccess(false)
+        setReportReason('')
+        setReportDetails('')
+      }, 2000)
+    } catch (error) {
+      console.error('Error submitting report:', error)
+      alert('Failed to submit report')
+    } finally {
+      setReportSubmitting(false)
+    }
+  }
+
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
   if (!listing) return <div className="min-h-screen flex items-center justify-center">Listing not found</div>
 
@@ -371,9 +404,94 @@ export default function ListingPage() {
             </div>
 
             <div className="border-t pt-4">
-              <p className="text-sm text-gray-500">Seller: {seller?.name || 'Unknown'}</p>
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-gray-500">Seller: {seller?.name || 'Unknown'}</p>
+                {!isSeller && (
+                  <button
+                    onClick={() => setShowReportModal(true)}
+                    className="text-xs text-red-400 hover:text-red-600 hover:underline"
+                  >
+                    🚩 Report listing
+                  </button>
+                )}
+              </div>
               {listing.is_sold && <p className="text-red-600 font-bold mt-2">This item is SOLD</p>}
             </div>
+
+            {/* Report Modal */}
+            {showReportModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center px-4">
+                <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+                  {reportSuccess ? (
+                    <div className="text-center">
+                      <div className="text-5xl mb-4">✅</div>
+                      <h2 className="text-xl font-bold text-green-700">Report submitted!</h2>
+                      <p className="text-gray-500 mt-2 text-sm">Thank you. We'll review this listing shortly.</p>
+                    </div>
+                  ) : (
+                    <>
+                      <h2 className="text-xl font-bold mb-1">🚩 Report Listing</h2>
+                      <p className="text-gray-500 text-sm mb-4">Help keep Wellesley Finds safe. Reports are anonymous to the seller.</p>
+
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-2">Reason *</label>
+                          <div className="space-y-2">
+                            {[
+                              'Prohibited item (drugs, weapons, etc.)',
+                              'Counterfeit or stolen item',
+                              'Misleading or fraudulent listing',
+                              'Spam or duplicate listing',
+                              'Inappropriate content',
+                              'Other'
+                            ].map(reason => (
+                              <label key={reason} className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name="reason"
+                                  value={reason}
+                                  checked={reportReason === reason}
+                                  onChange={(e) => setReportReason(e.target.value)}
+                                  className="w-4 h-4"
+                                />
+                                <span className="text-sm">{reason}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Additional details <span className="text-gray-400 font-normal">(optional)</span></label>
+                          <textarea
+                            value={reportDetails}
+                            onChange={(e) => setReportDetails(e.target.value)}
+                            className="w-full px-3 py-2 border rounded-md text-sm"
+                            rows="3"
+                            placeholder="Any additional context..."
+                          />
+                        </div>
+
+                        <div className="flex gap-3">
+                          <button
+                            onClick={submitReport}
+                            disabled={!reportReason || reportSubmitting}
+                            className="flex-1 bg-red-600 text-white py-2 rounded-xl font-semibold hover:bg-red-700 disabled:opacity-50 transition"
+                          >
+                            {reportSubmitting ? 'Submitting...' : 'Submit Report'}
+                          </button>
+                          <button
+                            onClick={() => { setShowReportModal(false); setReportReason(''); setReportDetails('') }}
+                            className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-xl font-semibold hover:bg-gray-200 transition"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {!isSeller && conversation && (
