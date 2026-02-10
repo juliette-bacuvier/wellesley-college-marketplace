@@ -187,12 +187,14 @@ export default function Auth() {
       </div>
 
       <footer className="bg-white border-t py-6">
-        <div className="max-w-7xl mx-auto px-4 text-center space-y-2">
+        <div className="max-w-7xl mx-auto px-4 text-center space-y-3">
           <p className="text-gray-500 text-sm">Made with 💙 by Juliette Bacuvier • Wellesley College Class of 2026</p>
-          <a href="/terms" className="text-gray-400 hover:text-gray-600 text-xs hover:underline">Terms of Use</a>
           <a href="https://buymeacoffee.com/jbacuvier" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
             ☕ Buy me a coffee!
           </a>
+          <div>
+            <a href="/terms" className="text-gray-400 hover:text-gray-600 text-xs hover:underline">Terms of Use</a>
+          </div>
         </div>
       </footer>
     </div>
