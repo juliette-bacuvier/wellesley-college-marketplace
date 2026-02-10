@@ -544,19 +544,50 @@ export default function MyListings() {
                         )}
                       </div>
 
-                      <div className="flex gap-2 pt-4 border-t flex-wrap">
-                        <button onClick={() => fetchOffersForListing(listing.id)} className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 text-sm">View Offers</button>
-                        <button onClick={async () => { await supabase.from('listings').update({ is_draft: !listing.is_draft }).eq('id', listing.id); setListings(listings.map(l => l.id === listing.id ? { ...l, is_draft: !listing.is_draft } : l)) }} className={`px-4 py-2 rounded-md text-sm ${listing.is_draft ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
-                          {listing.is_draft ? 'Publish' : 'Save as Draft'}
-                        </button>
-                        <button onClick={() => toggleSold(listing.id, listing.is_sold)} className={`px-4 py-2 rounded-md text-sm ${listing.is_sold ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-yellow-600 text-white hover:bg-yellow-700'}`}>
-                          {listing.is_sold ? 'Mark Available' : 'Mark Sold'}
-                        </button>
-                        <button onClick={() => toggleArchive(listing.id, listing.is_archived)} className={`px-4 py-2 rounded-md text-sm ${listing.is_archived ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-gray-600 text-white hover:bg-gray-700'}`}>
-                          {listing.is_archived ? 'Unarchive' : 'Archive'}
-                        </button>
-                        <button onClick={() => startEdit(listing)} className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm">Edit</button>
-                        <button onClick={() => handleDelete(listing.id)} className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 text-sm">Delete</button>
+                      <div className="pt-4 border-t">
+                        <div className="flex flex-wrap gap-2">
+                          {/* Primary actions */}
+                          <button
+                            onClick={() => startEdit(listing)}
+                            className="flex items-center gap-1.5 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium transition"
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button
+                            onClick={() => fetchOffersForListing(listing.id)}
+                            className="flex items-center gap-1.5 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 text-sm font-medium transition"
+                          >
+                            💰 Offers {conversations[listing.id]?.length > 0 && `(${conversations[listing.id].length})`}
+                          </button>
+
+                          {/* Status actions */}
+                          <button
+                            onClick={() => toggleSold(listing.id, listing.is_sold)}
+                            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition ${listing.is_sold ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'}`}
+                          >
+                            {listing.is_sold ? '↩️ Mark Available' : '✅ Mark Sold'}
+                          </button>
+                          <button
+                            onClick={async () => { await supabase.from('listings').update({ is_draft: !listing.is_draft }).eq('id', listing.id); setListings(listings.map(l => l.id === listing.id ? { ...l, is_draft: !listing.is_draft } : l)) }}
+                            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition ${listing.is_draft ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                          >
+                            {listing.is_draft ? '🚀 Publish' : '📝 Draft'}
+                          </button>
+                          <button
+                            onClick={() => toggleArchive(listing.id, listing.is_archived)}
+                            className="flex items-center gap-1.5 bg-gray-100 text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-200 text-sm font-medium transition"
+                          >
+                            {listing.is_archived ? '📤 Unarchive' : '📦 Archive'}
+                          </button>
+
+                          {/* Danger zone */}
+                          <button
+                            onClick={() => handleDelete(listing.id)}
+                            className="flex items-center gap-1.5 bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100 text-sm font-medium transition ml-auto"
+                          >
+                            🗑️ Delete
+                          </button>
+                        </div>
                       </div>
 
                       {viewingOffersFor === listing.id && (
