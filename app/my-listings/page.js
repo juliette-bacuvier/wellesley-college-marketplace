@@ -4,9 +4,24 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
+
+async function sendEmail(type, to, data) {
+  try {
+    await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, to, data })
+    })
+  } catch (error) {
+    console.error('Error sending email:', error)
+  }
+}
+
 export default function MyListings() {
   const [listings, setListings] = useState([])
   const [user, setUser] = useState(null)
+  const [userProfile, setUserProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState({})
@@ -28,9 +43,23 @@ export default function MyListings() {
         fetchMyListings(user.id)
         fetchConversations(user.id)
         fetchLikeCounts()
+        fetchUserProfile(user.id)
       }
     })
   }, [])
+
+  const fetchUserProfile = async (userId) => {
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+      setUserProfile(data)
+    } catch (error) {
+      console.error('Error fetching user profile:', error)
+    }
+  }
 
   const fetchMyListings = async (userId) => {
     try {
@@ -78,14 +107,10 @@ export default function MyListings() {
 
   const fetchLikeCounts = async () => {
     try {
-      const { data, error } = await supabase
-        .from('likes')
-        .select('listing_id')
+      const { data, error } = await supabase.from('likes').select('listing_id')
       if (error) throw error
       const counts = {}
-      data.forEach(like => {
-        counts[like.listing_id] = (counts[like.listing_id] || 0) + 1
-      })
+      data.forEach(like => { counts[like.listing_id] = (counts[like.listing_id] || 0) + 1 })
       setLikeCounts(counts)
     } catch (error) {
       console.error('Error fetching like counts:', error)
@@ -96,7 +121,7 @@ export default function MyListings() {
     try {
       const { data, error } = await supabase
         .from('offers')
-        .select('*, profiles!offers_buyer_id_fkey(name, email)')
+        .select('*, profiles!offers_buyer_id_fkey(name, email, email_notifications, phone)')
         .eq('listing_id', listingId)
         .order('created_at', { ascending: false })
       if (error) throw error
@@ -110,9 +135,25 @@ export default function MyListings() {
   const acceptOffer = async (offerId, buyerId, listingId) => {
     if (!confirm('Accept this offer? This will mark the item as sold.')) return
     try {
+      const offer = offers.find(o => o.id === offerId)
+      const listing = listings.find(l => l.id === listingId)
+
       await supabase.from('offers').update({ status: 'accepted' }).eq('id', offerId)
       await supabase.from('offers').update({ status: 'rejected' }).eq('listing_id', listingId).neq('id', offerId)
       await supabase.from('listings').update({ is_sold: true, buyer_id: buyerId }).eq('id', listingId)
+
+      // Send email to buyer if they have notifications enabled
+      if (offer?.profiles?.email_notifications !== false) {
+        await sendEmail('offer_accepted', offer.profiles.email, {
+          buyer_name: offer.profiles.name,
+          seller_name: userProfile?.name || 'The seller',
+          seller_email: userProfile?.email,
+          seller_phone: userProfile?.phone,
+          listing_title: listing?.title,
+          offer_amount: offer?.amount
+        })
+      }
+
       alert('Offer accepted! Item marked as sold.')
       await fetchMyListings(user.id)
       await fetchOffersForListing(listingId)
@@ -209,10 +250,7 @@ export default function MyListings() {
     })
   }
 
-  const cancelEdit = () => {
-    setEditingId(null)
-    setEditForm({})
-  }
+  const cancelEdit = () => { setEditingId(null); setEditForm({}) }
 
   const saveEdit = async (id) => {
     try {
@@ -249,9 +287,7 @@ export default function MyListings() {
     }
   }
 
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>
-  }
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -364,7 +400,6 @@ export default function MyListings() {
                             {listing.is_sold && <span className="text-xs bg-red-600 text-white px-2 py-1 rounded">SOLD</span>}
                           </div>
                           <p className="text-gray-600 mb-3">{listing.description}</p>
-
                           <div className="flex flex-wrap gap-2 mb-3">
                             <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">{listing.category}</span>
                             <span className={`text-xs px-2 py-1 rounded-full font-medium ${getConditionStyle(listing.condition)}`}>
@@ -374,11 +409,8 @@ export default function MyListings() {
                               <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">Negotiable</span>
                             )}
                           </div>
-
                           <div className="space-y-1 text-sm">
-                            <p className="text-2xl font-bold text-green-600">
-                              {listing.is_free ? 'FREE' : `$${listing.price}`}
-                            </p>
+                            <p className="text-2xl font-bold text-green-600">{listing.is_free ? 'FREE' : `$${listing.price}`}</p>
                             {listing.original_price && <p className="text-sm text-gray-400 line-through">${listing.original_price}</p>}
                             <p className="text-gray-500">📍 {listing.dorm} • 💳 {listing.payment_method}</p>
                             {listing.available_on && <p className="text-gray-500">📅 {listing.available_on}</p>}
@@ -401,9 +433,7 @@ export default function MyListings() {
                       </div>
 
                       <div className="flex gap-2 pt-4 border-t flex-wrap">
-                        <button onClick={() => fetchOffersForListing(listing.id)} className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 text-sm">
-                          View Offers
-                        </button>
+                        <button onClick={() => fetchOffersForListing(listing.id)} className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 text-sm">View Offers</button>
                         <button onClick={() => toggleSold(listing.id, listing.is_sold)} className={`px-4 py-2 rounded-md text-sm ${listing.is_sold ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-yellow-600 text-white hover:bg-yellow-700'}`}>
                           {listing.is_sold ? 'Mark Available' : 'Mark Sold'}
                         </button>
@@ -459,7 +489,7 @@ export default function MyListings() {
         )}
       </main>
 
-            <footer className="bg-white border-t mt-12 py-6">
+      <footer className="bg-white border-t mt-12 py-6">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <a href="https://buymeacoffee.com/jbacuvier" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
             ☕ Buy me a coffee!

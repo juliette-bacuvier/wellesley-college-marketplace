@@ -11,6 +11,7 @@ export default function Profile() {
   const [phone, setPhone] = useState('')
   const [classYear, setClassYear] = useState('')
   const [graduationTerm, setGraduationTerm] = useState('')
+  const [emailNotifications, setEmailNotifications] = useState(true)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
@@ -27,7 +28,6 @@ export default function Profile() {
         router.push('/auth')
         return
       }
-
       setUser(user)
       setEmail(user.email)
 
@@ -44,6 +44,7 @@ export default function Profile() {
         setPhone(data.phone || '')
         setClassYear(data.class_year || '')
         setGraduationTerm(data.graduation_term || '')
+        setEmailNotifications(data.email_notifications !== false)
       }
     } catch (error) {
       console.error('Error fetching profile:', error)
@@ -64,12 +65,12 @@ export default function Profile() {
           name,
           phone,
           class_year: classYear,
-          graduation_term: graduationTerm
+          graduation_term: graduationTerm,
+          email_notifications: emailNotifications
         })
         .eq('id', user.id)
 
       if (error) throw error
-
       setMessage('Profile updated successfully!')
       setTimeout(() => setMessage(''), 3000)
     } catch (error) {
@@ -88,9 +89,7 @@ export default function Profile() {
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold">My Profile</h1>
-          <Link href="/" className="text-gray-600 hover:text-gray-900">
-            Back to Home
-          </Link>
+          <Link href="/" className="text-gray-600 hover:text-gray-900">Back to Home</Link>
         </div>
       </nav>
 
@@ -171,6 +170,27 @@ export default function Profile() {
               </p>
             </div>
 
+            <div className="border rounded-md p-4 bg-gray-50">
+              <h3 className="font-medium mb-3">📧 Email Notifications</h3>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={emailNotifications}
+                  onChange={(e) => setEmailNotifications(e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <div>
+                  <p className="text-sm font-medium">Receive email notifications</p>
+                  <p className="text-xs text-gray-500">Get notified about new offers, messages, and accepted offers</p>
+                </div>
+              </label>
+              {!emailNotifications && (
+                <p className="text-xs text-orange-600 mt-2">
+                  ⚠️ You won't receive any email notifications. Make sure to check the app regularly!
+                </p>
+              )}
+            </div>
+
             <button
               type="submit"
               disabled={saving}
@@ -188,7 +208,7 @@ export default function Profile() {
         </div>
       </main>
 
-            <footer className="bg-white border-t mt-12 py-6">
+      <footer className="bg-white border-t mt-12 py-6">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <a href="https://buymeacoffee.com/jbacuvier" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
             ☕ Buy me a coffee!

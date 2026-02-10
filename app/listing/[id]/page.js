@@ -4,16 +4,31 @@ import { supabase } from '@/lib/supabase'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
+
+async function sendEmail(type, to, data) {
+  try {
+    await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, to, data })
+    })
+  } catch (error) {
+    console.error('Error sending email:', error)
+  }
+}
+
 export default function ListingPage() {
   const params = useParams()
   const listingId = params.id
   const router = useRouter()
-  
+
   const [listing, setListing] = useState(null)
   const [seller, setSeller] = useState(null)
   const [images, setImages] = useState([])
   const [activeImage, setActiveImage] = useState(0)
   const [user, setUser] = useState(null)
+  const [userProfile, setUserProfile] = useState(null)
   const [conversation, setConversation] = useState(null)
   const [messages, setMessages] = useState([])
   const [newMessage, setNewMessage] = useState('')
@@ -24,11 +39,16 @@ export default function ListingPage() {
   useEffect(() => {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/auth')
-        return
-      }
+      if (!user) { router.push('/auth'); return }
       setUser(user)
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+      setUserProfile(profile)
+
       await fetchListing()
     }
     init()
@@ -75,7 +95,6 @@ export default function ListingPage() {
       if (error) throw error
       setListing(data)
 
-      // Fetch seller profile
       if (data.user_id) {
         const { data: sellerData } = await supabase
           .from('profiles')
@@ -85,7 +104,6 @@ export default function ListingPage() {
         setSeller(sellerData)
       }
 
-      // Fetch all images
       const { data: listingImages } = await supabase
         .from('listing_images')
         .select('image_url, display_order')
@@ -113,11 +131,7 @@ export default function ListingPage() {
         .eq('buyer_id', userId)
         .single()
 
-      if (existing) {
-        setConversation(existing)
-        return
-      }
-
+      if (existing) { setConversation(existing); return }
       if (listing.user_id === userId) return
 
       const { data: newConv, error: createError } = await supabase
@@ -187,6 +201,18 @@ export default function ListingPage() {
           message: newMessage
         }])
       if (error) throw error
+
+      // Send email notification if seller has notifications enabled
+      if (seller?.email_notifications !== false && user.id !== listing.user_id) {
+        await sendEmail('new_message', seller.email, {
+          recipient_name: seller.name,
+          sender_name: userProfile?.name || 'A buyer',
+          listing_title: listing.title,
+          listing_id: listingId,
+          message: newMessage
+        })
+      }
+
       setNewMessage('')
       await fetchMessages()
     } catch (error) {
@@ -199,10 +225,7 @@ export default function ListingPage() {
 
   const makeOffer = async () => {
     if (!offerAmount || !conversation) return
-    if (listing.is_sold) {
-      alert('This item is already sold')
-      return
-    }
+    if (listing.is_sold) { alert('This item is already sold'); return }
     try {
       const { error } = await supabase
         .from('offers')
@@ -225,6 +248,17 @@ export default function ListingPage() {
           message: `📝 Made an offer: $${offerAmount}`
         }])
 
+      // Send email notification to seller
+      if (seller?.email_notifications !== false) {
+        await sendEmail('new_offer', seller.email, {
+          seller_name: seller.name,
+          buyer_name: userProfile?.name || 'A buyer',
+          listing_title: listing.title,
+          listing_price: listing.price,
+          offer_amount: offerAmount
+        })
+      }
+
       setOfferAmount('')
       alert('Offer sent!')
       await fetchMessages()
@@ -234,13 +268,8 @@ export default function ListingPage() {
     }
   }
 
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>
-  }
-
-  if (!listing) {
-    return <div className="min-h-screen flex items-center justify-center">Listing not found</div>
-  }
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
+  if (!listing) return <div className="min-h-screen flex items-center justify-center">Listing not found</div>
 
   const isSeller = user && listing.user_id === user.id
 
@@ -254,11 +283,9 @@ export default function ListingPage() {
 
       <main className="max-w-6xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Listing Details */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h1 className="text-3xl font-bold mb-4">{listing.title}</h1>
 
-            {/* Image Gallery */}
             {images.length > 0 && (
               <div className="mb-4">
                 <img
@@ -274,9 +301,7 @@ export default function ListingPage() {
                         src={img}
                         alt={`${listing.title} ${index + 1}`}
                         onClick={() => setActiveImage(index)}
-                        className={`w-16 h-16 object-cover rounded-md cursor-pointer border-2 flex-shrink-0 ${
-                          activeImage === index ? 'border-blue-600' : 'border-gray-200'
-                        }`}
+                        className={`w-16 h-16 object-cover rounded-md cursor-pointer border-2 flex-shrink-0 ${activeImage === index ? 'border-blue-600' : 'border-gray-200'}`}
                       />
                     ))}
                   </div>
@@ -312,25 +337,18 @@ export default function ListingPage() {
               </div>
               <p className="text-sm text-gray-600">📍 {listing.dorm}</p>
               <p className="text-sm text-gray-600">💳 {listing.payment_method}</p>
-              {listing.available_on && (
-                <p className="text-sm text-gray-600">📅 Available: {listing.available_on}</p>
-              )}
+              {listing.available_on && <p className="text-sm text-gray-600">📅 Available: {listing.available_on}</p>}
               {listing.needs_to_be_gone_by && (
-                <p className="text-sm text-red-600 font-semibold">
-                  ⚠️ Needs to be gone by: {new Date(listing.needs_to_be_gone_by).toLocaleDateString()}
-                </p>
+                <p className="text-sm text-red-600 font-semibold">⚠️ Needs to be gone by: {new Date(listing.needs_to_be_gone_by).toLocaleDateString()}</p>
               )}
             </div>
 
             <div className="border-t pt-4">
               <p className="text-sm text-gray-500">Seller: {seller?.name || 'Unknown'}</p>
-              {listing.is_sold && (
-                <p className="text-red-600 font-bold mt-2">This item is SOLD</p>
-              )}
+              {listing.is_sold && <p className="text-red-600 font-bold mt-2">This item is SOLD</p>}
             </div>
           </div>
 
-          {/* Messaging Section */}
           {!isSeller && conversation && (
             <div className="bg-white rounded-lg shadow-md p-6 flex flex-col" style={{ height: '600px' }}>
               <h2 className="text-2xl font-bold mb-4">Message Seller</h2>
@@ -340,20 +358,11 @@ export default function ListingPage() {
                   <p className="text-gray-400 text-sm text-center">No messages yet. Say hi! 👋</p>
                 )}
                 {messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`flex ${msg.sender_id === user.id ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div className={`max-w-xs px-4 py-2 rounded-lg ${
-                      msg.sender_id === user.id
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-200 text-gray-900'
-                    }`}>
+                  <div key={msg.id} className={`flex ${msg.sender_id === user.id ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-xs px-4 py-2 rounded-lg ${msg.sender_id === user.id ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-900'}`}>
                       <p className="text-xs opacity-75 mb-1">{msg.sender_name}</p>
                       <p>{msg.message}</p>
-                      <p className="text-xs opacity-75 mt-1">
-                        {new Date(msg.created_at).toLocaleTimeString()}
-                      </p>
+                      <p className="text-xs opacity-75 mt-1">{new Date(msg.created_at).toLocaleTimeString()}</p>
                     </div>
                   </div>
                 ))}
@@ -367,11 +376,7 @@ export default function ListingPage() {
                   placeholder="Type a message..."
                   className="flex-1 px-3 py-2 border rounded-md"
                 />
-                <button
-                  type="submit"
-                  disabled={sending || !newMessage.trim()}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
-                >
+                <button type="submit" disabled={sending || !newMessage.trim()} className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50">
                   Send
                 </button>
               </form>
@@ -391,11 +396,7 @@ export default function ListingPage() {
                       placeholder="Enter amount"
                       className="flex-1 px-3 py-2 border rounded-md"
                     />
-                    <button
-                      onClick={makeOffer}
-                      disabled={!offerAmount}
-                      className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50"
-                    >
+                    <button onClick={makeOffer} disabled={!offerAmount} className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50">
                       Send Offer
                     </button>
                   </div>
@@ -407,7 +408,7 @@ export default function ListingPage() {
           {isSeller && (
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-2xl font-bold mb-4">This is your listing</h2>
-              <p className="text-gray-600">You can manage this listing from the "My Listings" page.</p>
+              <p className="text-gray-600">You can manage this listing from the My Listings page.</p>
               <Link href="/my-listings" className="text-blue-600 hover:underline mt-4 inline-block">
                 Go to My Listings →
               </Link>
@@ -416,7 +417,7 @@ export default function ListingPage() {
         </div>
       </main>
 
-            <footer className="bg-white border-t mt-12 py-6">
+      <footer className="bg-white border-t mt-12 py-6">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <a href="https://buymeacoffee.com/jbacuvier" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
             ☕ Buy me a coffee!
