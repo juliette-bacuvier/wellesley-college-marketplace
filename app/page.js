@@ -54,11 +54,7 @@ export default function Home() {
 
   const checkAdminStatus = async (userId) => {
     try {
-      const { data } = await supabase
-        .from('admins')
-        .select('*')
-        .eq('user_id', userId)
-        .single()
+      const { data } = await supabase.from('admins').select('*').eq('user_id', userId).single()
       setIsAdmin(!!data)
     } catch (error) {
       setIsAdmin(false)
@@ -67,12 +63,8 @@ export default function Home() {
 
   const fetchAdmins = async () => {
     try {
-      const { data } = await supabase
-        .from('admins')
-        .select('user_id')
-      if (data) {
-        setAdminIds(new Set(data.map(admin => admin.user_id)))
-      }
+      const { data } = await supabase.from('admins').select('user_id')
+      if (data) setAdminIds(new Set(data.map(a => a.user_id)))
     } catch (error) {
       console.error('Error fetching admins:', error)
     }
@@ -80,11 +72,7 @@ export default function Home() {
 
   const fetchAnnouncements = async () => {
     try {
-      const { data } = await supabase
-        .from('announcements')
-        .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
+      const { data } = await supabase.from('announcements').select('*').eq('is_active', true).order('created_at', { ascending: false })
       setAnnouncements(data || [])
     } catch (error) {
       console.error('Error fetching announcements:', error)
@@ -93,18 +81,10 @@ export default function Home() {
 
   const fetchPendingOffers = async (userId) => {
     try {
-      const { data: userListings } = await supabase
-        .from('listings')
-        .select('id')
-        .eq('user_id', userId)
+      const { data: userListings } = await supabase.from('listings').select('id').eq('user_id', userId)
       if (!userListings || userListings.length === 0) return
       const listingIds = userListings.map(l => l.id)
-      const { data: offers } = await supabase
-        .from('offers')
-        .select('id')
-        .in('listing_id', listingIds)
-        .eq('status', 'pending')
-        .eq('offered_by', 'buyer')
+      const { data: offers } = await supabase.from('offers').select('id').in('listing_id', listingIds).eq('status', 'pending').eq('offered_by', 'buyer')
       setPendingOffersCount(offers?.length || 0)
     } catch (error) {
       console.error('Error fetching pending offers:', error)
@@ -113,18 +93,10 @@ export default function Home() {
 
   const fetchUnreadMessages = async (userId) => {
     try {
-      const { data: convos } = await supabase
-        .from('conversations')
-        .select('id')
-        .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
+      const { data: convos } = await supabase.from('conversations').select('id').or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
       if (!convos || convos.length === 0) return
       const convoIds = convos.map(c => c.id)
-      const { data: unread } = await supabase
-        .from('messages')
-        .select('id')
-        .in('conversation_id', convoIds)
-        .eq('is_read', false)
-        .neq('sender_id', userId)
+      const { data: unread } = await supabase.from('messages').select('id').in('conversation_id', convoIds).eq('is_read', false).neq('sender_id', userId)
       setUnreadMessagesCount(unread?.length || 0)
     } catch (error) {
       console.error('Error fetching unread messages:', error)
@@ -140,11 +112,8 @@ export default function Home() {
     const gradYear = parseInt(classYear)
     if (isNaN(gradYear)) return { level: '', priority: 6 }
     let yearsUntilGrad = gradYear - currentYear
-    if (graduationTerm === 'Winter') {
-      if (currentMonth >= 8) yearsUntilGrad -= 0.5
-    } else if (graduationTerm === 'Spring') {
-      if (currentMonth >= 5) yearsUntilGrad -= 1
-    }
+    if (graduationTerm === 'Winter') { if (currentMonth >= 8) yearsUntilGrad -= 0.5 }
+    else if (graduationTerm === 'Spring') { if (currentMonth >= 5) yearsUntilGrad -= 1 }
     if (yearsUntilGrad <= 0.5) return { level: 'Senior', priority: 1 }
     else if (yearsUntilGrad <= 1.5) return { level: 'Junior', priority: 2 }
     else if (yearsUntilGrad <= 2.5) return { level: 'Sophomore', priority: 3 }
@@ -154,15 +123,15 @@ export default function Home() {
   const getYearLevelBadge = (classYear, graduationTerm) => {
     const { level } = calculateYearLevel(classYear, graduationTerm)
     const styles = {
-      'Senior': 'bg-red-600 text-white font-bold',
-      'Exchange Student': 'bg-red-600 text-white font-bold',
-      'Junior': 'bg-orange-500 text-white font-bold',
-      'Sophomore': 'bg-yellow-500 text-white font-bold',
-      'Freshman': 'bg-green-600 text-white font-bold',
-      'Graduate Student': 'bg-gray-500 text-white font-bold'
+      'Senior': 'bg-red-600 text-white',
+      'Exchange Student': 'bg-red-600 text-white',
+      'Junior': 'bg-orange-500 text-white',
+      'Sophomore': 'bg-yellow-500 text-white',
+      'Freshman': 'bg-green-600 text-white',
+      'Graduate Student': 'bg-gray-500 text-white'
     }
     return level ? (
-      <div className={`absolute top-2 left-2 ${styles[level]} text-xs px-2 py-1 rounded z-10`}>
+      <div className={`absolute top-2 left-2 ${styles[level]} text-xs font-bold px-2 py-1 rounded z-10`}>
         {level.toUpperCase()}
       </div>
     ) : null
@@ -194,42 +163,20 @@ export default function Home() {
     try {
       const oneYearAgo = new Date()
       oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
-      await supabase
-        .from('listings')
-        .update({ is_archived: true })
-        .lt('created_at', oneYearAgo.toISOString())
-        .eq('is_archived', false)
+      await supabase.from('listings').update({ is_archived: true }).lt('created_at', oneYearAgo.toISOString()).eq('is_archived', false)
     } catch (error) {
-      console.error('Error auto-archiving old listings:', error)
+      console.error('Error auto-archiving:', error)
     }
   }
 
   const fetchListings = async () => {
     try {
-      const { data, error } = await supabase
-        .from('listings')
-        .select('*')
-        .eq('is_archived', false)
-        .order('created_at', { ascending: false })
+      const { data, error } = await supabase.from('listings').select('*').eq('is_archived', false).order('created_at', { ascending: false })
       if (error) throw error
       const listingsWithProfiles = await Promise.all((data || []).map(async (listing) => {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('name, email, phone, class_year, graduation_term')
-          .eq('id', listing.user_id)
-          .single()
-        // Fetch first image from listing_images
-        const { data: images } = await supabase
-          .from('listing_images')
-          .select('image_url')
-          .eq('listing_id', listing.id)
-          .order('display_order', { ascending: true })
-          .limit(1)
-        return { 
-          ...listing, 
-          profiles: profile,
-          extra_images: images || []
-        }
+        const { data: profile } = await supabase.from('profiles').select('name, email, phone, class_year, graduation_term').eq('id', listing.user_id).single()
+        const { data: images } = await supabase.from('listing_images').select('image_url').eq('listing_id', listing.id).order('display_order', { ascending: true }).limit(1)
+        return { ...listing, profiles: profile, extra_images: images || [] }
       }))
       setListings(listingsWithProfiles)
     } catch (error) {
@@ -241,10 +188,7 @@ export default function Home() {
 
   const fetchUserLikes = async (userId) => {
     try {
-      const { data, error } = await supabase
-        .from('likes')
-        .select('listing_id')
-        .eq('user_id', userId)
+      const { data, error } = await supabase.from('likes').select('listing_id').eq('user_id', userId)
       if (error) throw error
       setUserLikes(new Set(data.map(like => like.listing_id)))
       setLikedCount(data.length)
@@ -255,14 +199,10 @@ export default function Home() {
 
   const fetchLikeCounts = async () => {
     try {
-      const { data, error } = await supabase
-        .from('likes')
-        .select('listing_id')
+      const { data, error } = await supabase.from('likes').select('listing_id')
       if (error) throw error
       const counts = {}
-      data.forEach(like => {
-        counts[like.listing_id] = (counts[like.listing_id] || 0) + 1
-      })
+      data.forEach(like => { counts[like.listing_id] = (counts[like.listing_id] || 0) + 1 })
       setLikeCounts(counts)
     } catch (error) {
       console.error('Error fetching like counts:', error)
@@ -280,46 +220,24 @@ export default function Home() {
       }
       return true
     })
-    if (searchTerm) {
-      filtered = filtered.filter(l =>
-        l.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        l.description?.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    }
-    if (selectedCategory) {
-      filtered = filtered.filter(l => l.category === selectedCategory)
-    }
-    if (selectedDorm) {
-      filtered = filtered.filter(l => l.dorm === selectedDorm)
-    }
-    if (showFreeOnly) {
-      filtered = filtered.filter(l => l.is_free)
-    }
+    if (searchTerm) filtered = filtered.filter(l => l.title.toLowerCase().includes(searchTerm.toLowerCase()) || l.description?.toLowerCase().includes(searchTerm.toLowerCase()))
+    if (selectedCategory) filtered = filtered.filter(l => l.category === selectedCategory)
+    if (selectedDorm) filtered = filtered.filter(l => l.dorm === selectedDorm)
+    if (showFreeOnly) filtered = filtered.filter(l => l.is_free)
 
-    // Sorting
     switch(sortBy) {
-      case 'price_asc':
-        filtered = [...filtered].sort((a, b) => (a.price || 0) - (b.price || 0))
-        break
-      case 'price_desc':
-        filtered = [...filtered].sort((a, b) => (b.price || 0) - (a.price || 0))
-        break
-      case 'newest':
-        filtered = [...filtered].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-        break
-      case 'most_liked':
-        filtered = [...filtered].sort((a, b) => (likeCounts[b.id] || 0) - (likeCounts[a.id] || 0))
-        break
+      case 'price_asc': filtered = [...filtered].sort((a, b) => (a.price || 0) - (b.price || 0)); break
+      case 'price_desc': filtered = [...filtered].sort((a, b) => (b.price || 0) - (a.price || 0)); break
+      case 'newest': filtered = [...filtered].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); break
+      case 'most_liked': filtered = [...filtered].sort((a, b) => (likeCounts[b.id] || 0) - (likeCounts[a.id] || 0)); break
       case 'ending_soon':
         filtered = [...filtered].sort((a, b) => {
           if (!a.needs_to_be_gone_by && !b.needs_to_be_gone_by) return 0
           if (!a.needs_to_be_gone_by) return 1
           if (!b.needs_to_be_gone_by) return -1
           return new Date(a.needs_to_be_gone_by) - new Date(b.needs_to_be_gone_by)
-        })
-        break
+        }); break
       default:
-        // Default: urgent first, then year level
         filtered = [...filtered].sort((a, b) => {
           const today = new Date()
           const aDeadline = a.needs_to_be_gone_by ? new Date(a.needs_to_be_gone_by) : null
@@ -374,13 +292,10 @@ export default function Home() {
     }
   }
 
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>
-  }
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Desktop Nav */}
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-xl font-bold">Wellesley Marketplace</h1>
@@ -409,26 +324,19 @@ export default function Home() {
               )}
             </Link>
             <Link href="/profile" className="text-2xl" title="My Profile">👤</Link>
-            {isAdmin && (
-              <Link href="/admin" className="text-2xl" title="Admin Dashboard">⭐</Link>
-            )}
+            {isAdmin && <Link href="/admin" className="text-2xl" title="Admin Dashboard">⭐</Link>}
             <button onClick={handleSignOut} className="text-gray-600 hover:text-gray-900 text-sm">Sign Out</button>
           </div>
 
           {/* Mobile hamburger */}
-          <button
-            className="md:hidden text-gray-600 hover:text-gray-900"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            <div className="space-y-1">
-              <span className={`block w-6 h-0.5 bg-gray-600 transition-all ${mobileMenuOpen ? 'rotate-45 translate-y-1.5' : ''}`}></span>
-              <span className={`block w-6 h-0.5 bg-gray-600 transition-all ${mobileMenuOpen ? 'opacity-0' : ''}`}></span>
-              <span className={`block w-6 h-0.5 bg-gray-600 transition-all ${mobileMenuOpen ? '-rotate-45 -translate-y-1.5' : ''}`}></span>
-            </div>
+          <button className="md:hidden flex flex-col gap-1 p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            <span className="block w-6 h-0.5 bg-gray-600"></span>
+            <span className="block w-6 h-0.5 bg-gray-600"></span>
+            <span className="block w-6 h-0.5 bg-gray-600"></span>
           </button>
         </div>
 
-        {/* Mobile menu dropdown */}
+        {/* Mobile dropdown */}
         {mobileMenuOpen && (
           <div className="md:hidden bg-white border-t px-4 py-4 space-y-3">
             <Link href="/help" className="block text-gray-600 hover:text-gray-900 py-2 border-b" onClick={() => setMobileMenuOpen(false)}>❓ Help</Link>
@@ -468,15 +376,8 @@ export default function Home() {
       )}
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Search and Filters */}
         <div className="mb-6 space-y-4">
-          <input
-            type="text"
-            placeholder="Search listings..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-4 py-2 border rounded-md"
-          />
+          <input type="text" placeholder="Search listings..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-4 py-2 border rounded-md" />
           <div className="flex gap-3 flex-wrap">
             <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="px-3 py-2 border rounded-md text-sm">
               <option value="">All Categories</option>
@@ -517,11 +418,7 @@ export default function Home() {
                 <div key={listing.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-200">
                   {imageToShow && (
                     <div className="relative">
-                      <img
-                        src={imageToShow}
-                        alt={listing.title}
-                        className={`w-full h-48 object-cover ${listing.is_sold ? 'grayscale' : ''}`}
-                      />
+                      <img src={imageToShow} alt={listing.title} className={`w-full h-48 object-cover ${listing.is_sold ? 'grayscale' : ''}`} />
                       {listing.is_sold && (
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                           <div className="transform -rotate-45 bg-gray-700 bg-opacity-90 text-white text-4xl font-bold py-2 px-16 shadow-lg">SOLD</div>
@@ -548,9 +445,7 @@ export default function Home() {
                         )}
                       </div>
                     </div>
-
                     <p className="text-gray-500 text-sm mb-3 line-clamp-2">{listing.description}</p>
-
                     <div className="flex flex-wrap gap-2 mb-3">
                       <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">{listing.category}</span>
                       <span className={`text-xs px-2 py-1 rounded-full font-medium ${getConditionStyle(listing.condition)}`}>
@@ -560,7 +455,6 @@ export default function Home() {
                         <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">Negotiable</span>
                       )}
                     </div>
-
                     <div className="flex items-center justify-between mb-2">
                       <div>
                         {listing.is_free ? (
@@ -573,13 +467,11 @@ export default function Home() {
                         )}
                       </div>
                     </div>
-
                     <p className="text-xs text-gray-500 mb-1">📍 {listing.dorm}</p>
                     {listing.available_on && <p className="text-xs text-gray-500 mb-1">📅 {listing.available_on}</p>}
                     {listing.needs_to_be_gone_by && (
                       <p className="text-xs text-red-600 font-semibold mb-2">⚠️ Gone by: {new Date(listing.needs_to_be_gone_by).toLocaleDateString()}</p>
                     )}
-
                     {!listing.is_sold && (
                       <div className="mt-3 pt-3 border-t">
                         <p className="text-xs text-gray-400 mb-2">
@@ -595,8 +487,12 @@ export default function Home() {
                           </a>
                           {listing.profiles?.phone && (
                             <>
-                              <a href={`tel:${listing.profiles?.phone}`} className="text-sm text-blue-600 hover:underline">📱 {listing.profiles?.phone}</a>
-                              <a href={`sms:${listing.profiles?.phone}?body=Hi, I'm interested in your listing: ${encodeURIComponent(listing.title)}`} className="text-sm text-blue-600 hover:underline">💬 Text Seller</a>
+                              <a href={`tel:${listing.profiles?.phone}`} className="text-sm text-blue-600 hover:underline">
+                                📱 {listing.profiles?.phone}
+                              </a>
+                              <a href={`sms:${listing.profiles?.phone}?body=Hi, I'm interested in your listing: ${encodeURIComponent(listing.title)}`} className="text-sm text-blue-600 hover:underline">
+                                💬 Text Seller
+                              </a>
                             </>
                           )}
                         </div>

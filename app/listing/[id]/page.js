@@ -416,14 +416,9 @@ export default function ListingPage() {
         </div>
       </main>
 
-      <footer className="bg-white border-t mt-12 py-6">
+            <footer className="bg-white border-t mt-12 py-6">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          
-            href="https://buymeacoffee.com/jbacuvier"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 hover:underline"
-          >
+          <a href="https://buymeacoffee.com/jbacuvier" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
             ☕ Buy me a coffee!
           </a>
         </div>

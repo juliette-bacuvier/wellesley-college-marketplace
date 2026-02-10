@@ -13,10 +13,7 @@ export default function MyPurchases() {
   useEffect(() => {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/auth')
-        return
-      }
+      if (!user) { router.push('/auth'); return }
       setUser(user)
       await fetchPurchases(user.id)
     }
@@ -31,7 +28,6 @@ export default function MyPurchases() {
         .eq('buyer_id', userId)
         .eq('is_sold', true)
         .order('updated_at', { ascending: false })
-
       if (error) throw error
 
       const purchasesWithData = await Promise.all((data || []).map(async (listing) => {
@@ -40,21 +36,14 @@ export default function MyPurchases() {
           .select('name, email, phone')
           .eq('id', listing.user_id)
           .single()
-
         const { data: images } = await supabase
           .from('listing_images')
           .select('image_url')
           .eq('listing_id', listing.id)
           .order('display_order', { ascending: true })
           .limit(1)
-
-        return {
-          ...listing,
-          profiles: profile,
-          extra_images: images || []
-        }
+        return { ...listing, profiles: profile, extra_images: images || [] }
       }))
-
       setPurchases(purchasesWithData)
     } catch (error) {
       console.error('Error fetching purchases:', error)
@@ -85,32 +74,24 @@ export default function MyPurchases() {
     }
   }
 
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>
-  }
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
 
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold">My Purchases</h1>
-          <Link href="/" className="text-gray-600 hover:text-gray-900">
-            Back to Home
-          </Link>
+          <Link href="/" className="text-gray-600 hover:text-gray-900">Back to Home</Link>
         </div>
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <h2 className="text-3xl font-bold mb-6">
-          Items You've Bought ({purchases.length})
-        </h2>
+        <h2 className="text-3xl font-bold mb-6">Items You've Bought ({purchases.length})</h2>
 
         {purchases.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-600 mb-4">You haven't purchased anything yet.</p>
-            <Link href="/" className="text-blue-600 hover:underline">
-              Browse Marketplace →
-            </Link>
+            <Link href="/" className="text-blue-600 hover:underline">Browse Marketplace →</Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -119,20 +100,14 @@ export default function MyPurchases() {
               return (
                 <div key={item.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-200">
                   {imageToShow && (
-                    <img
-                      src={imageToShow}
-                      alt={item.title}
-                      className="w-full h-48 object-cover"
-                    />
+                    <img src={imageToShow} alt={item.title} className="w-full h-48 object-cover" />
                   )}
                   <div className="p-4">
                     <h3 className="text-lg font-bold mb-2 leading-tight">{item.title}</h3>
                     <p className="text-gray-500 text-sm mb-3 line-clamp-2">{item.description}</p>
 
                     <div className="flex flex-wrap gap-2 mb-3">
-                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                        {item.category}
-                      </span>
+                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">{item.category}</span>
                       <span className={`text-xs px-2 py-1 rounded-full font-medium ${getConditionStyle(item.condition)}`}>
                         {getConditionLabel(item.condition)}
                       </span>
@@ -150,33 +125,20 @@ export default function MyPurchases() {
                     <p className="text-xs text-gray-500 mb-1">📍 {item.dorm}</p>
 
                     <div className="border-t pt-3 mt-3 space-y-1">
-                      <p className="text-sm font-semibold text-gray-700">
-                        Seller: {item.profiles?.name}
-                      </p>
-                      <div className="flex flex-col gap-1">
-                        
-                          href={`mailto:${item.profiles?.email}`}
-                          className="text-sm text-blue-600 hover:underline"
-                        >
-                          📧 {item.profiles?.email}
-                        </a>
-                        {item.profiles?.phone && (
-                          <>
-                            
-                              href={`tel:${item.profiles?.phone}`}
-                              className="text-sm text-blue-600 hover:underline"
-                            >
-                              📱 {item.profiles?.phone}
-                            </a>
-                            
-                              href={`sms:${item.profiles?.phone}`}
-                              className="text-sm text-blue-600 hover:underline"
-                            >
-                              💬 Text Seller
-                            </a>
-                          </>
-                        )}
-                      </div>
+                      <p className="text-sm font-semibold text-gray-700">Seller: {item.profiles?.name}</p>
+                      <a href={`mailto:${item.profiles?.email}`} className="block text-sm text-blue-600 hover:underline">
+                        📧 {item.profiles?.email}
+                      </a>
+                      {item.profiles?.phone && (
+                        <>
+                          <a href={`tel:${item.profiles?.phone}`} className="block text-sm text-blue-600 hover:underline">
+                            📱 {item.profiles?.phone}
+                          </a>
+                          <a href={`sms:${item.profiles?.phone}`} className="block text-sm text-blue-600 hover:underline">
+                            💬 Text Seller
+                          </a>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -188,12 +150,7 @@ export default function MyPurchases() {
 
       <footer className="bg-white border-t mt-12 py-6">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          
-            href="https://buymeacoffee.com/jbacuvier"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 hover:underline"
-          >
+          <a href="https://buymeacoffee.com/jbacuvier" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
             ☕ Buy me a coffee!
           </a>
         </div>
