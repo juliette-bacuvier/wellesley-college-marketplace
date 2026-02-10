@@ -27,17 +27,61 @@ export default function MyPurchases() {
     try {
       const { data, error } = await supabase
         .from('listings')
-        .select('*, profiles!listings_user_id_fkey(name, email, phone)')
+        .select('*')
         .eq('buyer_id', userId)
         .eq('is_sold', true)
         .order('updated_at', { ascending: false })
-      
+
       if (error) throw error
-      setPurchases(data || [])
+
+      const purchasesWithData = await Promise.all((data || []).map(async (listing) => {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('name, email, phone')
+          .eq('id', listing.user_id)
+          .single()
+
+        const { data: images } = await supabase
+          .from('listing_images')
+          .select('image_url')
+          .eq('listing_id', listing.id)
+          .order('display_order', { ascending: true })
+          .limit(1)
+
+        return {
+          ...listing,
+          profiles: profile,
+          extra_images: images || []
+        }
+      }))
+
+      setPurchases(purchasesWithData)
     } catch (error) {
       console.error('Error fetching purchases:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const getConditionStyle = (condition) => {
+    switch(condition) {
+      case 'new': return 'bg-green-100 text-green-800'
+      case 'like_new': return 'bg-green-100 text-green-700'
+      case 'good': return 'bg-yellow-100 text-yellow-800'
+      case 'fair': return 'bg-orange-100 text-orange-800'
+      case 'poor': return 'bg-red-100 text-red-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getConditionLabel = (condition) => {
+    switch(condition) {
+      case 'new': return 'New'
+      case 'like_new': return 'Like New'
+      case 'good': return 'Good'
+      case 'fair': return 'Fair'
+      case 'poor': return 'Poor'
+      default: return condition
     }
   }
 
@@ -60,7 +104,7 @@ export default function MyPurchases() {
         <h2 className="text-3xl font-bold mb-6">
           Items You've Bought ({purchases.length})
         </h2>
-        
+
         {purchases.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-600 mb-4">You haven't purchased anything yet.</p>
@@ -70,65 +114,83 @@ export default function MyPurchases() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {purchases.map((item) => (
-              <div key={item.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-                {item.image_url && (
-                  <img src={item.image_url} alt={item.title} className="w-full h-48 object-cover" />
-                )}
-                <div className="p-4">
-                  <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
-                  <p className="text-gray-600 mb-2 text-sm">{item.description}</p>
-                  
-                  <div className="space-y-1 text-sm mb-3">
-                    <p className="text-2xl font-bold text-green-600">
-                      {item.is_free ? 'FREE' : `$${item.price}`}
-                    </p>
-                    <p className="text-gray-500">Condition: {item.condition}</p>
-                    <p className="text-gray-500">📍 {item.dorm}</p>
-                    {item.available_on && (
-                      <p className="text-gray-500">Available: {item.available_on}</p>
-                    )}
-                  </div>
+            {purchases.map((item) => {
+              const imageToShow = item.image_url || item.extra_images?.[0]?.image_url
+              return (
+                <div key={item.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-200">
+                  {imageToShow && (
+                    <img
+                      src={imageToShow}
+                      alt={item.title}
+                      className="w-full h-48 object-cover"
+                    />
+                  )}
+                  <div className="p-4">
+                    <h3 className="text-lg font-bold mb-2 leading-tight">{item.title}</h3>
+                    <p className="text-gray-500 text-sm mb-3 line-clamp-2">{item.description}</p>
 
-                  <div className="border-t pt-3 space-y-1">
-                    <p className="text-sm font-semibold text-gray-700">Seller: {item.profiles?.name}</p>
-                    <div className="flex flex-col gap-1">
-                      <a 
-                        href={`mailto:${item.profiles?.email}`}
-                        className="text-sm text-blue-600 hover:underline"
-                      >
-                        📧 {item.profiles?.email}
-                      </a>
-                      {item.profiles?.phone && (
-                        <>
-                          <a 
-                            href={`tel:${item.profiles?.phone}`}
-                            className="text-sm text-blue-600 hover:underline"
-                          >
-                            📱 {item.profiles?.phone}
-                          </a>
-                          <a 
-                            href={`sms:${item.profiles?.phone}`}
-                            className="text-sm text-blue-600 hover:underline"
-                          >
-                            💬 Text Seller
-                          </a>
-                        </>
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                        {item.category}
+                      </span>
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${getConditionStyle(item.condition)}`}>
+                        {getConditionLabel(item.condition)}
+                      </span>
+                    </div>
+
+                    <div className="mb-3">
+                      <p className="text-2xl font-bold text-green-600">
+                        {item.is_free ? 'FREE' : `$${item.price}`}
+                      </p>
+                      {item.original_price && !item.is_free && (
+                        <p className="text-sm text-gray-400 line-through">${item.original_price}</p>
                       )}
+                    </div>
+
+                    <p className="text-xs text-gray-500 mb-1">📍 {item.dorm}</p>
+
+                    <div className="border-t pt-3 mt-3 space-y-1">
+                      <p className="text-sm font-semibold text-gray-700">
+                        Seller: {item.profiles?.name}
+                      </p>
+                      <div className="flex flex-col gap-1">
+                        
+                          href={`mailto:${item.profiles?.email}`}
+                          className="text-sm text-blue-600 hover:underline"
+                        >
+                          📧 {item.profiles?.email}
+                        </a>
+                        {item.profiles?.phone && (
+                          <>
+                            
+                              href={`tel:${item.profiles?.phone}`}
+                              className="text-sm text-blue-600 hover:underline"
+                            >
+                              📱 {item.profiles?.phone}
+                            </a>
+                            
+                              href={`sms:${item.profiles?.phone}`}
+                              className="text-sm text-blue-600 hover:underline"
+                            >
+                              💬 Text Seller
+                            </a>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </main>
 
       <footer className="bg-white border-t mt-12 py-6">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <a 
-            href="https://buymeacoffee.com/jbacuvier" 
-            target="_blank" 
+          
+            href="https://buymeacoffee.com/jbacuvier"
+            target="_blank"
             rel="noopener noreferrer"
             className="text-blue-600 hover:underline"
           >

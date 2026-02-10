@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function CreateListing() {
   const [title, setTitle] = useState('')
@@ -14,42 +15,26 @@ export default function CreateListing() {
   const [paymentMethod, setPaymentMethod] = useState('')
   const [availableOn, setAvailableOn] = useState('')
   const [needsToBeGoneBy, setNeedsToBeGoneBy] = useState('')
-  const [image, setImage] = useState(null)
+  const [images, setImages] = useState([])
+  const [imagePreviews, setImagePreviews] = useState([])
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [userPhone, setUserPhone] = useState('')
   const [includePhone, setIncludePhone] = useState(false)
   const [isFree, setIsFree] = useState(false)
+  const [isNegotiable, setIsNegotiable] = useState(false)
   const router = useRouter()
 
   const categories = [
-    'Textbooks',
-    'Furniture',
-    'Electronics',
-    'Clothing',
-    'Kitchen & Appliances',
-    'Decor',
-    'Sports & Fitness',
-    'Other'
+    'Textbooks', 'Furniture', 'Electronics', 'Clothing',
+    'Kitchen & Appliances', 'Decor', 'Sports & Fitness', 'Other'
   ]
 
   const dorms = [
-    'Cazenove',
-    'Shafer',
-    'Pomeroy',
-    'Beebe',
-    'Tower Court East',
-    'Tower Court West',
-    'Severance',
-    'Claflin',
-    'Lake House',
-    'Casa Cervantes',
-    'French House',
-    'Stone Davis',
-    'Bates',
-    'McAfee',
-    'Freeman',
-    'Munger'
+    'Cazenove', 'Shafer', 'Pomeroy', 'Beebe', 'Tower Court East',
+    'Tower Court West', 'Severance', 'Claflin', 'Lake House',
+    'Casa Cervantes', 'French House', 'Stone Davis', 'Bates',
+    'McAfee', 'Freeman', 'Munger'
   ]
 
   useEffect(() => {
@@ -61,19 +46,28 @@ export default function CreateListing() {
           .select('phone')
           .eq('id', user.id)
           .single()
-        
-        if (data?.phone) {
-          setUserPhone(data.phone)
-        }
+        if (data?.phone) setUserPhone(data.phone)
       }
     }
     fetchUserProfile()
   }, [])
 
-  const handleImageChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setImage(e.target.files[0])
+  const handleImagesChange = (e) => {
+    const files = Array.from(e.target.files)
+    if (files.length > 5) {
+      alert('Maximum 5 images allowed')
+      return
     }
+    setImages(files)
+    const previews = files.map(file => URL.createObjectURL(file))
+    setImagePreviews(previews)
+  }
+
+  const removeImage = (index) => {
+    const newImages = images.filter((_, i) => i !== index)
+    const newPreviews = imagePreviews.filter((_, i) => i !== index)
+    setImages(newImages)
+    setImagePreviews(newPreviews)
   }
 
   const handleSubmit = async (e) => {
@@ -92,12 +86,15 @@ export default function CreateListing() {
           .eq('id', user.id)
       }
 
-      let imageUrl = null
+      // Upload first image as main image_url
+      let mainImageUrl = null
+      const uploadedUrls = []
 
-      if (image) {
+      for (let i = 0; i < images.length; i++) {
+        const image = images[i]
         const fileExt = image.name.split('.').pop()
-        const fileName = `${user.id}-${Date.now()}.${fileExt}`
-        
+        const fileName = `${user.id}-${Date.now()}-${i}.${fileExt}`
+
         const { error: uploadError } = await supabase.storage
           .from('listing-images')
           .upload(fileName, image)
@@ -107,11 +104,13 @@ export default function CreateListing() {
         const { data: { publicUrl } } = supabase.storage
           .from('listing-images')
           .getPublicUrl(fileName)
-        
-        imageUrl = publicUrl
+
+        uploadedUrls.push(publicUrl)
+        if (i === 0) mainImageUrl = publicUrl
       }
 
-      const { error: insertError } = await supabase
+      // Create listing
+      const { data: newListing, error: insertError } = await supabase
         .from('listings')
         .insert([{
           user_id: user.id,
@@ -125,11 +124,27 @@ export default function CreateListing() {
           payment_method: paymentMethod,
           available_on: availableOn,
           needs_to_be_gone_by: needsToBeGoneBy || null,
-          image_url: imageUrl,
-          is_free: isFree
+          image_url: mainImageUrl,
+          is_free: isFree,
+          is_negotiable: isNegotiable
         }])
+        .select()
+        .single()
 
       if (insertError) throw insertError
+
+      // Insert additional images into listing_images table
+      if (uploadedUrls.length > 0) {
+        const imageRows = uploadedUrls.map((url, index) => ({
+          listing_id: newListing.id,
+          image_url: url,
+          display_order: index
+        }))
+
+        await supabase
+          .from('listing_images')
+          .insert(imageRows)
+      }
 
       setMessage('Listing created successfully!')
       setTimeout(() => router.push('/'), 1500)
@@ -143,8 +158,13 @@ export default function CreateListing() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-2xl mx-auto px-4">
-        <h1 className="text-3xl font-bold mb-6">Create New Listing</h1>
-        
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Create New Listing</h1>
+          <Link href="/" className="text-gray-600 hover:text-gray-900">
+            Back to Home
+          </Link>
+        </div>
+
         <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Title *</label>
@@ -184,7 +204,6 @@ export default function CreateListing() {
                 ))}
               </select>
             </div>
-
             <div>
               <label className="block text-sm font-medium mb-1">Dorm *</label>
               <select
@@ -229,7 +248,6 @@ export default function CreateListing() {
                 </label>
               </div>
             </div>
-
             <div>
               <label className="block text-sm font-medium mb-1">Original Price ($)</label>
               <input
@@ -241,6 +259,19 @@ export default function CreateListing() {
                 placeholder="100.00"
               />
             </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="negotiable"
+              checked={isNegotiable}
+              onChange={(e) => setIsNegotiable(e.target.checked)}
+              className="w-4 h-4"
+            />
+            <label htmlFor="negotiable" className="text-sm font-medium text-purple-700">
+              Price is negotiable
+            </label>
           </div>
 
           <div>
@@ -266,7 +297,7 @@ export default function CreateListing() {
               value={availableOn}
               onChange={(e) => setAvailableOn(e.target.value)}
               className="w-full px-3 py-2 border rounded-md"
-              placeholder="e.g., Weekdays after 5pm, May 10-15"
+              placeholder="e.g., Weekdays after 5pm"
             />
           </div>
 
@@ -278,7 +309,7 @@ export default function CreateListing() {
               onChange={(e) => setNeedsToBeGoneBy(e.target.value)}
               className="w-full px-3 py-2 border rounded-md"
             />
-            <p className="text-xs text-gray-500 mt-1">Optional: Set a deadline to prioritize this listing</p>
+            <p className="text-xs text-gray-500 mt-1">Optional: Set a deadline to prioritize your listing</p>
           </div>
 
           <div>
@@ -315,13 +346,41 @@ export default function CreateListing() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Upload Image</label>
+            <label className="block text-sm font-medium mb-1">
+              Upload Images (up to 5)
+            </label>
             <input
               type="file"
               accept="image/*"
-              onChange={handleImageChange}
+              multiple
+              onChange={handleImagesChange}
               className="w-full px-3 py-2 border rounded-md"
             />
+            <p className="text-xs text-gray-500 mt-1">First image will be the main photo</p>
+
+            {imagePreviews.length > 0 && (
+              <div className="mt-3 grid grid-cols-5 gap-2">
+                {imagePreviews.map((preview, index) => (
+                  <div key={index} className="relative">
+                    <img
+                      src={preview}
+                      alt={`Preview ${index + 1}`}
+                      className="w-full h-16 object-cover rounded-md border"
+                    />
+                    {index === 0 && (
+                      <span className="absolute bottom-0 left-0 right-0 text-center bg-blue-600 text-white text-xs rounded-b-md">Main</span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full w-4 h-4 text-xs flex items-center justify-center"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex gap-4">
@@ -332,7 +391,6 @@ export default function CreateListing() {
             >
               {loading ? 'Creating...' : 'Create Listing'}
             </button>
-            
             <button
               type="button"
               onClick={() => router.push('/')}
@@ -352,9 +410,9 @@ export default function CreateListing() {
 
       <footer className="bg-white border-t mt-12 py-6">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <a 
-            href="https://buymeacoffee.com/jbacuvier" 
-            target="_blank" 
+          
+            href="https://buymeacoffee.com/jbacuvier"
+            target="_blank"
             rel="noopener noreferrer"
             className="text-blue-600 hover:underline"
           >

@@ -25,7 +25,6 @@ export default function MyLikes() {
 
   const fetchLikedListings = async (userId) => {
     try {
-      // Get user's likes
       const { data: likes, error: likesError } = await supabase
         .from('likes')
         .select('listing_id')
@@ -40,7 +39,6 @@ export default function MyLikes() {
         return
       }
 
-      // Get the actual listings
       const { data: listings, error: listingsError } = await supabase
         .from('listings')
         .select('*')
@@ -49,15 +47,25 @@ export default function MyLikes() {
 
       if (listingsError) throw listingsError
 
-      // Fetch seller profiles separately
       const listingsWithProfiles = await Promise.all((listings || []).map(async (listing) => {
         const { data: profile } = await supabase
           .from('profiles')
           .select('name, email, phone')
           .eq('id', listing.user_id)
           .single()
-        
-        return { ...listing, profiles: profile }
+
+        const { data: images } = await supabase
+          .from('listing_images')
+          .select('image_url')
+          .eq('listing_id', listing.id)
+          .order('display_order', { ascending: true })
+          .limit(1)
+
+        return { 
+          ...listing, 
+          profiles: profile,
+          extra_images: images || []
+        }
       }))
 
       setLikedListings(listingsWithProfiles)
@@ -75,10 +83,31 @@ export default function MyLikes() {
         .delete()
         .eq('user_id', user.id)
         .eq('listing_id', listingId)
-
       setLikedListings(likedListings.filter(l => l.id !== listingId))
     } catch (error) {
       console.error('Error removing like:', error)
+    }
+  }
+
+  const getConditionStyle = (condition) => {
+    switch(condition) {
+      case 'new': return 'bg-green-100 text-green-800'
+      case 'like_new': return 'bg-green-100 text-green-700'
+      case 'good': return 'bg-yellow-100 text-yellow-800'
+      case 'fair': return 'bg-orange-100 text-orange-800'
+      case 'poor': return 'bg-red-100 text-red-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getConditionLabel = (condition) => {
+    switch(condition) {
+      case 'new': return 'New'
+      case 'like_new': return 'Like New'
+      case 'good': return 'Good'
+      case 'fair': return 'Fair'
+      case 'poor': return 'Poor'
+      default: return condition
     }
   }
 
@@ -90,7 +119,7 @@ export default function MyLikes() {
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">My Liked Items</h1>
+          <h1 className="text-2xl font-bold">❤️ My Liked Items</h1>
           <Link href="/" className="text-gray-600 hover:text-gray-900">
             Back to Home
           </Link>
@@ -101,7 +130,7 @@ export default function MyLikes() {
         <h2 className="text-3xl font-bold mb-6">
           Items You've Liked ({likedListings.length})
         </h2>
-        
+
         {likedListings.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-600 mb-4">You haven't liked any items yet.</p>
@@ -111,80 +140,98 @@ export default function MyLikes() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {likedListings.map((listing) => (
-              <div key={listing.id} className="bg-white rounded-lg shadow-md overflow-hidden relative">
-                {listing.image_url && (
-                  <div className="relative">
-                    <img 
-                      src={listing.image_url} 
-                      alt={listing.title} 
-                      className={`w-full h-48 object-cover ${listing.is_sold ? 'grayscale' : ''}`} 
-                    />
-                    {listing.is_sold && (
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="transform -rotate-45 bg-gray-700 bg-opacity-90 text-white text-4xl font-bold py-2 px-16 shadow-lg">
-                          SOLD
+            {likedListings.map((listing) => {
+              const imageToShow = listing.image_url || listing.extra_images?.[0]?.image_url
+              return (
+                <div key={listing.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-200">
+                  {imageToShow && (
+                    <div className="relative">
+                      <img
+                        src={imageToShow}
+                        alt={listing.title}
+                        className={`w-full h-48 object-cover ${listing.is_sold ? 'grayscale' : ''}`}
+                      />
+                      {listing.is_sold && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <div className="transform -rotate-45 bg-gray-700 bg-opacity-90 text-white text-4xl font-bold py-2 px-16 shadow-lg">
+                            SOLD
+                          </div>
                         </div>
+                      )}
+                    </div>
+                  )}
+                  <div className="p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="text-lg font-bold flex-1 leading-tight">{listing.title}</h3>
+                      <button
+                        onClick={() => removeLike(listing.id)}
+                        className="text-2xl hover:scale-110 transition-transform ml-2"
+                        title="Unlike"
+                      >
+                        ❤️
+                      </button>
+                    </div>
+
+                    <p className="text-gray-500 text-sm mb-3 line-clamp-2">{listing.description}</p>
+
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                        {listing.category}
+                      </span>
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${getConditionStyle(listing.condition)}`}>
+                        {getConditionLabel(listing.condition)}
+                      </span>
+                      {listing.is_negotiable && (
+                        <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
+                          Negotiable
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between mb-2">
+                      {listing.is_free ? (
+                        <span className="text-2xl font-bold text-green-600">FREE</span>
+                      ) : (
+                        <span className="text-2xl font-bold text-green-600">${listing.price}</span>
+                      )}
+                      {listing.original_price && !listing.is_free && (
+                        <span className="text-sm text-gray-400 line-through">${listing.original_price}</span>
+                      )}
+                    </div>
+
+                    <p className="text-xs text-gray-500 mb-1">📍 {listing.dorm}</p>
+                    {listing.available_on && (
+                      <p className="text-xs text-gray-500 mb-1">📅 {listing.available_on}</p>
+                    )}
+                    {listing.needs_to_be_gone_by && (
+                      <p className="text-xs text-red-600 font-semibold mb-2">
+                        ⚠️ Gone by: {new Date(listing.needs_to_be_gone_by).toLocaleDateString()}
+                      </p>
+                    )}
+
+                    {!listing.is_sold && (
+                      <div className="mt-3 pt-3 border-t">
+                        <Link
+                          href={`/listing/${listing.id}`}
+                          className="block text-center bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 text-sm font-medium"
+                        >
+                          💬 View Details / Message Seller
+                        </Link>
                       </div>
                     )}
                   </div>
-                )}
-                <div className="p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-xl font-semibold flex-1">{listing.title}</h3>
-                    <button
-                      onClick={() => removeLike(listing.id)}
-                      className="text-2xl"
-                      title="Unlike"
-                    >
-                      ❤️
-                    </button>
-                  </div>
-                  <p className="text-gray-600 mb-2 text-sm">{listing.description}</p>
-                  
-                  <div className="space-y-1 text-sm mb-3">
-                    <p className="text-blue-600 font-medium">{listing.category}</p>
-                    <p className="text-gray-500">📍 {listing.dorm}</p>
-                    {listing.available_on && (
-                      <p className="text-gray-500">📅 Available: {listing.available_on}</p>
-                    )}
-                  </div>
-
-                  <div className="flex justify-between items-center mb-2">
-                    {listing.is_free ? (
-                      <span className="text-2xl font-bold text-green-600">FREE</span>
-                    ) : (
-                      <span className="text-2xl font-bold text-green-600">${listing.price}</span>
-                    )}
-                    {listing.original_price && !listing.is_free && (
-                      <span className="text-sm text-gray-500 line-through">${listing.original_price}</span>
-                    )}
-                  </div>
-
-                  <p className="text-sm text-gray-500">Condition: {listing.condition}</p>
-
-                  {!listing.is_sold && (
-                    <div className="mt-3 pt-3 border-t">
-                      <Link
-                        href={`/listing/${listing.id}`}
-                        className="block text-center bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700"
-                      >
-                        View Details / Message Seller
-                      </Link>
-                    </div>
-                  )}
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </main>
 
       <footer className="bg-white border-t mt-12 py-6">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <a 
-            href="https://buymeacoffee.com/jbacuvier" 
-            target="_blank" 
+          
+            href="https://buymeacoffee.com/jbacuvier"
+            target="_blank"
             rel="noopener noreferrer"
             className="text-blue-600 hover:underline"
           >
