@@ -30,6 +30,12 @@ export default function MyListings() {
   const [conversations, setConversations] = useState({})
   const [likeCounts, setLikeCounts] = useState({})
   const [activeTab, setActiveTab] = useState('active')
+  const [dashboard, setDashboard] = useState({
+    totalActive: 0,
+    totalSold: 0,
+    totalEarned: 0,
+    totalLikes: 0
+  })
   const router = useRouter()
 
   const categories = ['Textbooks', 'Furniture', 'Electronics', 'Clothing', 'Kitchen & Appliances', 'Decor', 'Sports & Fitness', 'Other']
@@ -45,6 +51,7 @@ export default function MyListings() {
         fetchConversations(user.id)
         fetchLikeCounts()
         fetchUserProfile(user.id)
+        fetchDashboard(user.id)
       }
     })
   }, [])
@@ -59,6 +66,46 @@ export default function MyListings() {
       setUserProfile(data)
     } catch (error) {
       console.error('Error fetching user profile:', error)
+    }
+  }
+
+  const fetchDashboard = async (userId) => {
+    try {
+      // Get all listings
+      const { data: myListings } = await supabase
+        .from('listings')
+        .select('id, is_sold, is_archived, is_draft')
+        .eq('user_id', userId)
+
+      const totalActive = myListings?.filter(l => !l.is_sold && !l.is_archived && !l.is_draft).length || 0
+      const totalSold = myListings?.filter(l => l.is_sold).length || 0
+
+      // Get accepted offers to calculate total earned
+      const soldIds = myListings?.filter(l => l.is_sold).map(l => l.id) || []
+      let totalEarned = 0
+      if (soldIds.length > 0) {
+        const { data: acceptedOffers } = await supabase
+          .from('offers')
+          .select('amount')
+          .in('listing_id', soldIds)
+          .eq('status', 'accepted')
+        totalEarned = acceptedOffers?.reduce((sum, o) => sum + (o.amount || 0), 0) || 0
+      }
+
+      // Get total likes
+      const allIds = myListings?.map(l => l.id) || []
+      let totalLikes = 0
+      if (allIds.length > 0) {
+        const { data: likes } = await supabase
+          .from('likes')
+          .select('id')
+          .in('listing_id', allIds)
+        totalLikes = likes?.length || 0
+      }
+
+      setDashboard({ totalActive, totalSold, totalEarned, totalLikes })
+    } catch (error) {
+      console.error('Error fetching dashboard:', error)
     }
   }
 
@@ -304,6 +351,26 @@ export default function MyListings() {
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         <h2 className="text-3xl font-bold mb-6">Your Listings</h2>
+
+        {/* Seller Dashboard */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-xl shadow-sm p-4 text-center border-t-4 border-blue-500">
+            <p className="text-3xl font-bold text-blue-600">{dashboard.totalActive}</p>
+            <p className="text-sm text-gray-500 mt-1">Active Listings</p>
+          </div>
+          <div className="bg-white rounded-xl shadow-sm p-4 text-center border-t-4 border-green-500">
+            <p className="text-3xl font-bold text-green-600">{dashboard.totalSold}</p>
+            <p className="text-sm text-gray-500 mt-1">Items Sold</p>
+          </div>
+          <div className="bg-white rounded-xl shadow-sm p-4 text-center border-t-4 border-purple-500">
+            <p className="text-3xl font-bold text-purple-600">${dashboard.totalEarned.toFixed(2)}</p>
+            <p className="text-sm text-gray-500 mt-1">Total Earned</p>
+          </div>
+          <div className="bg-white rounded-xl shadow-sm p-4 text-center border-t-4 border-pink-500">
+            <p className="text-3xl font-bold text-pink-600">{dashboard.totalLikes}</p>
+            <p className="text-sm text-gray-500 mt-1">Total Likes</p>
+          </div>
+        </div>
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 border-b overflow-x-auto">
