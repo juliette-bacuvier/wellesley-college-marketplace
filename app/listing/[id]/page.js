@@ -8,11 +8,17 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 
 async function sendEmail(type, to, data) {
   try {
-    await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+        'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      },
       body: JSON.stringify({ type, to, data })
     })
+    const result = await res.json()
+    console.log('Email result:', result)
   } catch (error) {
     console.error('Error sending email:', error)
   }
