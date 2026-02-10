@@ -36,8 +36,31 @@ export default function Auth() {
           setLoading(false)
           return
         }
+        // Check if user already exists
+        const { data: existingUser } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', email)
+          .single()
+
+        if (existingUser) {
+          setMessage('An account with this email already exists. Please sign in instead.')
+          setMessageType('error')
+          setLoading(false)
+          return
+        }
+
         const { error } = await supabase.auth.signUp({ email, password })
-        if (error) throw error
+        if (error) {
+          if (error.message.toLowerCase().includes('already registered') || error.message.toLowerCase().includes('already exists')) {
+            setMessage('An account with this email already exists. Please sign in instead.')
+          } else {
+            setMessage(error.message)
+          }
+          setMessageType('error')
+          setLoading(false)
+          return
+        }
         setSignUpEmail(email)
         setMessage('go_check_email')
         setMessageType('success')
