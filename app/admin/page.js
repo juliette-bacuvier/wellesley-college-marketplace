@@ -16,6 +16,7 @@ export default function AdminDashboard() {
     type: 'info'
   })
   const [reports, setReports] = useState([])
+  const [pendingEvents, setPendingEvents] = useState([])
   const [analytics, setAnalytics] = useState({
     totalListings: 0,
     totalUsers: 0,
@@ -58,6 +59,7 @@ export default function AdminDashboard() {
       await fetchAnnouncements()
       await fetchAnalytics()
       await fetchReports()
+      await fetchPendingEvents()
     } catch (error) {
       console.error('Error checking admin status:', error)
       router.push('/')
@@ -167,6 +169,30 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error fetching analytics:', error)
     }
+  }
+
+  const fetchPendingEvents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .select('*, profiles!events_user_id_fkey(name, email)')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: true })
+      if (error) throw error
+      setPendingEvents(data || [])
+    } catch (error) {
+      console.error('Error fetching pending events:', error)
+    }
+  }
+
+  const approveEvent = async (id) => {
+    await supabase.from('events').update({ status: 'approved' }).eq('id', id)
+    setPendingEvents(pendingEvents.filter(e => e.id !== id))
+  }
+
+  const rejectEvent = async (id) => {
+    await supabase.from('events').update({ status: 'rejected' }).eq('id', id)
+    setPendingEvents(pendingEvents.filter(e => e.id !== id))
   }
 
   const fetchReports = async () => {
@@ -374,6 +400,38 @@ export default function AdminDashboard() {
               )}
             </div>
           </div>
+        </section>
+
+        {/* Pending Events Section */}
+        <section>
+          <h2 className="text-2xl font-bold mb-4">🎉 Pending Events {pendingEvents.length > 0 && <span className="ml-2 text-sm bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">{pendingEvents.length} pending</span>}</h2>
+          {pendingEvents.length === 0 ? (
+            <div className="bg-white rounded-lg shadow p-6 text-center text-gray-500">✅ No events pending review!</div>
+          ) : (
+            <div className="space-y-4">
+              {pendingEvents.map(event => {
+                const date = new Date(event.start_date)
+                return (
+                  <div key={event.id} className="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-400">
+                    <div className="flex gap-4">
+                      <img src={event.flyer_url} alt={event.title} className="w-24 h-24 object-cover rounded-lg flex-shrink-0" />
+                      <div className="flex-1">
+                        <h3 className="font-bold text-lg">{event.title}</h3>
+                        <p className="text-sm text-gray-500">📅 {date.toLocaleDateString()} at {date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</p>
+                        <p className="text-sm text-gray-500">📍 {event.location}</p>
+                        <p className="text-sm text-gray-500">Posted by: {event.profiles?.name} ({event.profiles?.email})</p>
+                        {event.description && <p className="text-sm text-gray-600 mt-1">{event.description}</p>}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-4 pt-3 border-t">
+                      <button onClick={() => approveEvent(event.id)} className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 text-sm">✅ Approve</button>
+                      <button onClick={() => rejectEvent(event.id)} className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 text-sm">❌ Reject</button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </section>
 
         {/* Reports Section */}
