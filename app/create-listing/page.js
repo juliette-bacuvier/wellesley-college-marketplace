@@ -27,8 +27,18 @@ export default function CreateListing() {
   const router = useRouter()
 
   const categories = [
-    'Textbooks', 'Furniture', 'Electronics', 'Clothing',
-    'Kitchen & Appliances', 'Decor', 'Sports & Fitness', 'Other'
+    'Bedding & Pillows',
+    'Books & Stationery',
+    'Clothing',
+    'Decor',
+    'Electronics',
+    'Furniture',
+    'Kitchen & Appliances',
+    'Office Essentials',
+    'Other',
+    'Sports & Fitness',
+    'Storage & Organization',
+    'Textbooks',
   ]
 
   const dorms = [
