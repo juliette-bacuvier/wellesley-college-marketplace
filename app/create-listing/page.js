@@ -23,6 +23,7 @@ export default function CreateListing() {
   const [includePhone, setIncludePhone] = useState(false)
   const [isFree, setIsFree] = useState(false)
   const [isNegotiable, setIsNegotiable] = useState(false)
+  const [isDraft, setIsDraft] = useState(false)
   const router = useRouter()
 
   const categories = [
@@ -43,10 +44,11 @@ export default function CreateListing() {
       if (user) {
         const { data } = await supabase
           .from('profiles')
-          .select('phone')
+          .select('phone, dorm')
           .eq('id', user.id)
           .single()
         if (data?.phone) setUserPhone(data.phone)
+        if (data?.dorm) setDorm(data.dorm)
       }
     }
     fetchUserProfile()
@@ -126,7 +128,8 @@ export default function CreateListing() {
           needs_to_be_gone_by: needsToBeGoneBy || null,
           image_url: mainImageUrl,
           is_free: isFree,
-          is_negotiable: isNegotiable
+          is_negotiable: isNegotiable,
+          is_draft: isDraft
         }])
         .select()
         .single()
@@ -146,8 +149,8 @@ export default function CreateListing() {
           .insert(imageRows)
       }
 
-      setMessage('Listing created successfully!')
-      setTimeout(() => router.push('/'), 1500)
+      setMessage(isDraft ? 'Draft saved!' : 'Listing created successfully!')
+      setTimeout(() => router.push('/my-listings'), 1500)
     } catch (error) {
       setMessage(error.message)
     } finally {
@@ -383,22 +386,31 @@ export default function CreateListing() {
             )}
           </div>
 
-          <div className="flex gap-4">
+          <div className="flex gap-3">
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
+              onClick={() => setIsDraft(false)}
+              className="flex-1 bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 disabled:opacity-50 font-semibold"
             >
-              {loading ? 'Creating...' : 'Create Listing'}
+              {loading && !isDraft ? 'Publishing...' : '🚀 Publish Listing'}
             </button>
             <button
-              type="button"
-              onClick={() => router.push('/')}
-              className="px-6 py-2 border rounded-md hover:bg-gray-50"
+              type="submit"
+              disabled={loading}
+              onClick={() => setIsDraft(true)}
+              className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-md hover:bg-gray-200 disabled:opacity-50 font-semibold border"
             >
-              Cancel
+              {loading && isDraft ? 'Saving...' : '📝 Save as Draft'}
             </button>
           </div>
+          <button
+            type="button"
+            onClick={() => router.push('/')}
+            className="w-full text-gray-400 hover:text-gray-600 text-sm py-1"
+          >
+            Cancel
+          </button>
 
           {message && (
             <p className={`text-center text-sm ${message.includes('success') ? 'text-green-600' : 'text-red-600'}`}>

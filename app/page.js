@@ -28,11 +28,12 @@ export default function Home() {
   const [adminIds, setAdminIds] = useState(new Set())
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [selectedListing, setSelectedListing] = useState(null)
+  const [activeModalImage, setActiveModalImage] = useState(0)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showProfileSetup, setShowProfileSetup] = useState(false)
   const router = useRouter()
 
-  const categories = ['Textbooks', 'Furniture', 'Electronics', 'Clothing', 'Kitchen & Appliances', 'Decor', 'Sports & Fitness', 'Other']
+  const categories = ['Bedding & Pillows', 'Books & Stationery', 'Clothing', 'Decor', 'Electronics', 'Furniture', 'Kitchen & Appliances', 'Office Essentials', 'Other', 'Sports & Fitness', 'Storage & Organization', 'Textbooks']
   const dorms = ['Cazenove', 'Shafer', 'Pomeroy', 'Beebe', 'Tower Court East', 'Tower Court West', 'Severance', 'Claflin', 'Lake House', 'Casa Cervantes', 'French House', 'Stone Davis', 'Bates', 'McAfee', 'Freeman', 'Munger']
 
   useEffect(() => {
@@ -646,14 +647,46 @@ export default function Home() {
               <button onClick={() => setSelectedListing(null)} className="text-gray-400 hover:text-gray-600 text-2xl flex-shrink-0">✕</button>
             </div>
 
-            {/* Image */}
-            {(selectedListing.image_url || selectedListing.extra_images?.[0]?.image_url) && (
-              <img
-                src={selectedListing.image_url || selectedListing.extra_images?.[0]?.image_url}
-                alt={selectedListing.title}
-                className="w-full h-72 object-cover"
-              />
-            )}
+            {/* Image Gallery */}
+            {(() => {
+              const allImages = selectedListing.extra_images?.length > 0
+                ? selectedListing.extra_images.map(i => i.image_url)
+                : selectedListing.image_url ? [selectedListing.image_url] : []
+              if (allImages.length === 0) return null
+              return (
+                <div className="relative">
+                  <img
+                    src={allImages[activeModalImage]}
+                    alt={selectedListing.title}
+                    className="w-full h-72 object-cover"
+                  />
+                  {allImages.length > 1 && (
+                    <>
+                      <button
+                        onClick={() => setActiveModalImage((activeModalImage - 1 + allImages.length) % allImages.length)}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full w-9 h-9 flex items-center justify-center hover:bg-opacity-75 transition text-lg"
+                      >‹</button>
+                      <button
+                        onClick={() => setActiveModalImage((activeModalImage + 1) % allImages.length)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full w-9 h-9 flex items-center justify-center hover:bg-opacity-75 transition text-lg"
+                      >›</button>
+                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded-full">
+                        {activeModalImage + 1} / {allImages.length}
+                      </div>
+                      <div className="flex gap-1 justify-center p-2 bg-black bg-opacity-20">
+                        {allImages.map((_, i) => (
+                          <button
+                            key={i}
+                            onClick={() => setActiveModalImage(i)}
+                            className={"w-2 h-2 rounded-full " + (i === activeModalImage ? "bg-white" : "bg-white bg-opacity-50")}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )
+            })()}
 
             <div className="p-6 space-y-4">
               {/* Price */}

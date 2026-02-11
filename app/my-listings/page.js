@@ -30,6 +30,9 @@ export default function MyListings() {
   const [conversations, setConversations] = useState({})
   const [likeCounts, setLikeCounts] = useState({})
   const [activeTab, setActiveTab] = useState('active')
+  const [editingImages, setEditingImages] = useState([])
+  const [editingImagePreviews, setEditingImagePreviews] = useState([])
+  const [existingImages, setExistingImages] = useState([])
   const [viewMode, setViewMode] = useState('card')
   const [dashboard, setDashboard] = useState({
     totalActive: 0,
@@ -39,7 +42,7 @@ export default function MyListings() {
   })
   const router = useRouter()
 
-  const categories = ['Textbooks', 'Furniture', 'Electronics', 'Clothing', 'Kitchen & Appliances', 'Decor', 'Sports & Fitness', 'Other']
+  const categories = ['Bedding & Pillows', 'Books & Stationery', 'Clothing', 'Decor', 'Electronics', 'Furniture', 'Kitchen & Appliances', 'Office Essentials', 'Other', 'Sports & Fitness', 'Storage & Organization', 'Textbooks']
   const dorms = ['Cazenove', 'Shafer', 'Pomeroy', 'Beebe', 'Tower Court East', 'Tower Court West', 'Severance', 'Claflin', 'Lake House', 'Casa Cervantes', 'French House', 'Stone Davis', 'Bates', 'McAfee', 'Freeman', 'Munger']
 
   useEffect(() => {
@@ -281,8 +284,17 @@ export default function MyListings() {
     }
   }
 
-  const startEdit = (listing) => {
+  const startEdit = async (listing) => {
     setEditingId(listing.id)
+    setEditingImages([])
+    setEditingImagePreviews([])
+    // Load existing images
+    const { data: imgs } = await supabase
+      .from('listing_images')
+      .select('id, image_url')
+      .eq('listing_id', listing.id)
+      .order('display_order', { ascending: true })
+    setExistingImages(imgs || [])
     setEditForm({
       title: listing.title,
       description: listing.description,
@@ -305,12 +317,52 @@ export default function MyListings() {
     try {
       const { error } = await supabase.from('listings').update(editForm).eq('id', id)
       if (error) throw error
-      setListings(listings.map(l => l.id === id ? { ...l, ...editForm } : l))
+
+      // Upload new images if any
+      if (editingImages.length > 0) {
+        for (let i = 0; i < editingImages.length; i++) {
+          const image = editingImages[i]
+          const fileExt = image.name.split('.').pop()
+          const fileName = user.id + '-' + Date.now() + '-' + i + '.' + fileExt
+          const { error: uploadError } = await supabase.storage
+            .from('listing-images')
+            .upload(fileName, image)
+          if (uploadError) throw uploadError
+          const { data: { publicUrl } } = supabase.storage
+            .from('listing-images')
+            .getPublicUrl(fileName)
+          const newOrder = existingImages.length + i
+          await supabase.from('listing_images').insert([{
+            listing_id: id,
+            image_url: publicUrl,
+            display_order: newOrder
+          }])
+          // Update main image_url if no existing images
+          if (existingImages.length === 0 && i === 0) {
+            await supabase.from('listings').update({ image_url: publicUrl }).eq('id', id)
+          }
+        }
+      }
+
+      await fetchMyListings(user.id)
       setEditingId(null)
       setEditForm({})
+      setEditingImages([])
+      setEditingImagePreviews([])
+      setExistingImages([])
     } catch (error) {
       console.error('Error updating listing:', error)
       alert('Error updating listing')
+    }
+  }
+
+  const removeExistingImage = async (imageId, listingId) => {
+    if (!confirm('Remove this image?')) return
+    try {
+      await supabase.from('listing_images').delete().eq('id', imageId)
+      setExistingImages(existingImages.filter(img => img.id !== imageId))
+    } catch (error) {
+      console.error('Error removing image:', error)
     }
   }
 
@@ -579,6 +631,45 @@ export default function MyListings() {
                         <label className="block text-sm font-medium mb-1">Payment Method</label>
                         <input type="text" value={editForm.payment_method || ''} onChange={(e) => setEditForm({...editForm, payment_method: e.target.value})} className="w-full px-3 py-2 border rounded-md" />
                       </div>
+                      {/* Image management */}
+                      <div>
+                        <label className="block text-sm font-medium mb-2">📷 Images</label>
+                        {existingImages.length > 0 && (
+                          <div className="flex gap-2 flex-wrap mb-3">
+                            {existingImages.map((img, i) => (
+                              <div key={img.id} className="relative">
+                                <img src={img.image_url} alt="listing" className="w-20 h-20 object-cover rounded-md border" />
+                                {i === 0 && <span className="absolute bottom-0 left-0 right-0 text-center bg-blue-600 text-white text-xs rounded-b-md">Main</span>}
+                                <button
+                                  type="button"
+                                  onClick={() => removeExistingImage(img.id, listing.id)}
+                                  className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"
+                                >×</button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={(e) => {
+                            const files = Array.from(e.target.files)
+                            setEditingImages(files)
+                            setEditingImagePreviews(files.map(f => URL.createObjectURL(f)))
+                          }}
+                          className="w-full px-3 py-2 border rounded-md text-sm"
+                        />
+                        {editingImagePreviews.length > 0 && (
+                          <div className="flex gap-2 flex-wrap mt-2">
+                            {editingImagePreviews.map((preview, i) => (
+                              <img key={i} src={preview} alt="new" className="w-20 h-20 object-cover rounded-md border border-blue-300" />
+                            ))}
+                          </div>
+                        )}
+                        <p className="text-xs text-gray-400 mt-1">New images will be added to existing ones</p>
+                      </div>
+
                       <div className="flex gap-2">
                         <button onClick={() => saveEdit(listing.id)} className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">Save</button>
                         <button onClick={cancelEdit} className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400">Cancel</button>

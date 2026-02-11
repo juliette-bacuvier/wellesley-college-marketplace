@@ -11,6 +11,7 @@ export default function Profile() {
   const [phone, setPhone] = useState('')
   const [classYear, setClassYear] = useState('')
   const [graduationTerm, setGraduationTerm] = useState('')
+  const [dorm, setDorm] = useState('')
   const [emailNotifications, setEmailNotifications] = useState(true)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -44,6 +45,7 @@ export default function Profile() {
         setPhone(data.phone || '')
         setClassYear(data.class_year || '')
         setGraduationTerm(data.graduation_term || '')
+        setDorm(data.dorm || '')
         setEmailNotifications(data.email_notifications !== false)
       }
     } catch (error) {
@@ -66,6 +68,7 @@ export default function Profile() {
           phone,
           class_year: classYear,
           graduation_term: graduationTerm,
+          dorm,
           email_notifications: emailNotifications
         })
         .eq('id', user.id)
@@ -155,6 +158,21 @@ export default function Profile() {
                 </select>
               </div>
             )}
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Your Dorm</label>
+              <select
+                value={dorm}
+                onChange={(e) => setDorm(e.target.value)}
+                className="w-full px-3 py-2 border rounded-md"
+              >
+                <option value="">Select dorm</option>
+                {['Bates', 'Beebe', 'Casa Cervantes', 'Cazenove', 'Claflin', 'Freeman', 'French House', 'Lake House', 'McAfee', 'Munger', 'Pomeroy', 'Severance', 'Shafer', 'Stone Davis', 'Tower Court East', 'Tower Court West'].map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">Will be auto-filled when you create a listing</p>
+            </div>
 
             <div>
               <label className="block text-sm font-medium mb-1">Phone Number</label>
