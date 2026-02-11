@@ -7,13 +7,14 @@ export default function ProfileSetupModal({ userId, onComplete }) {
   const [classYear, setClassYear] = useState('')
   const [graduationTerm, setGraduationTerm] = useState('')
   const [phone, setPhone] = useState('')
+  const [dorm, setDorm] = useState('')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
 
   const handleSave = async (e) => {
     e.preventDefault()
-    if (!name.trim() || !classYear) {
-      setMessage('Please fill in your name and class year.')
+    if (!name.trim() || !classYear || !dorm) {
+      setMessage('Please fill in your name, class year, and dorm.')
       return
     }
     setSaving(true)
@@ -24,6 +25,7 @@ export default function ProfileSetupModal({ userId, onComplete }) {
           name: name.trim(),
           class_year: classYear,
           graduation_term: graduationTerm || null,
+          dorm: dorm || null,
           phone: phone.trim() || null,
         })
         .eq('id', userId)
@@ -92,6 +94,21 @@ export default function ProfileSetupModal({ userId, onComplete }) {
               </select>
             </div>
           )}
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Your Dorm *</label>
+            <select
+              value={dorm}
+              onChange={(e) => setDorm(e.target.value)}
+              required
+              className="w-full px-3 py-2 border rounded-md"
+            >
+              <option value="">Select your dorm</option>
+              {['Bates', 'Beebe', 'Casa Cervantes', 'Cazenove', 'Claflin', 'Freeman', 'French House', 'Lake House', 'McAfee', 'Munger', 'Pomeroy', 'Severance', 'Shafer', 'Stone Davis', 'Tower Court East', 'Tower Court West'].map(d => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          </div>
 
           <div>
             <label className="block text-sm font-medium mb-1">Phone Number <span className="text-gray-400 font-normal">(optional)</span></label>

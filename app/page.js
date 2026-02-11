@@ -86,13 +86,11 @@ export default function Home() {
 
   const checkProfileSetup = async (userId) => {
     try {
-      const params = new URLSearchParams(window.location.search)
-      if (params.get('setup') !== 'true') return
-      const { data } = await supabase.from('profiles').select('name, class_year').eq('id', userId).single()
-      if (!data?.name || !data?.class_year) {
+      const { data } = await supabase.from('profiles').select('name, class_year, dorm').eq('id', userId).single()
+      if (!data?.name || !data?.class_year || !data?.dorm) {
         setShowProfileSetup(true)
       }
-      // Clean URL
+      // Clean URL just in case
       window.history.replaceState({}, '', '/')
     } catch (error) {
       console.error('Error checking profile setup:', error)
