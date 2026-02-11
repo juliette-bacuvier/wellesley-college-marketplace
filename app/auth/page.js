@@ -39,6 +39,24 @@ export default function Auth() {
     }
   }
 
+  const handleGoogleSignIn = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + '/?setup=true',
+          queryParams: {
+            hd: 'wellesley.edu'
+          }
+        }
+      })
+      if (error) throw error
+    } catch (error) {
+      setMessage('Error: ' + error.message)
+      setMessageType('error')
+    }
+  }
+
   const handleAuth = async (e) => {
     e.preventDefault()
     if (isSignUp && !agreedToRules) {
