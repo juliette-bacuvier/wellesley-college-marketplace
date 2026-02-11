@@ -22,6 +22,8 @@ export default function Home() {
   const [likedCount, setLikedCount] = useState(0)
   const [pendingOffersCount, setPendingOffersCount] = useState(0)
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0)
+  const [hasNewLostFound, setHasNewLostFound] = useState(false)
+  const [hasNewEvents, setHasNewEvents] = useState(false)
   const [unreadAnnouncementsCount, setUnreadAnnouncementsCount] = useState(0)
   const [isAdmin, setIsAdmin] = useState(false)
   const [announcements, setAnnouncements] = useState([])
@@ -43,6 +45,8 @@ export default function Home() {
         fetchUserLikes(user.id)
         fetchPendingOffers(user.id)
         fetchUnreadMessages(user.id)
+        checkNewLostFound()
+        checkNewEvents()
         checkAdminStatus(user.id)
         checkOnboarding(user.id)
         checkProfileSetup(user.id)
@@ -142,6 +146,37 @@ export default function Home() {
       setPendingOffersCount(offers?.length || 0)
     } catch (error) {
       console.error('Error fetching pending offers:', error)
+    }
+  }
+
+  const checkNewLostFound = async () => {
+    try {
+      const { data } = await supabase
+        .from('lost_and_found')
+        .select('id')
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
+      const seenIds = JSON.parse(localStorage.getItem('seenLostFound') || '[]')
+      const hasNew = (data || []).some(p => !seenIds.includes(p.id))
+      setHasNewLostFound(hasNew)
+    } catch (error) {
+      console.error('Error checking lost and found:', error)
+    }
+  }
+
+  const checkNewEvents = async () => {
+    try {
+      const { data } = await supabase
+        .from('events')
+        .select('id')
+        .eq('status', 'approved')
+        .gt('start_date', new Date().toISOString())
+        .order('created_at', { ascending: false })
+      const seenIds = JSON.parse(localStorage.getItem('seenEvents') || '[]')
+      const hasNew = (data || []).some(e => !seenIds.includes(e.id))
+      setHasNewEvents(hasNew)
+    } catch (error) {
+      console.error('Error checking events:', error)
     }
   }
 
@@ -447,8 +482,11 @@ export default function Home() {
                 <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{likedCount}</span>
               )}
             </Link>
-            <Link href="/community" className="relative text-2xl" title="Community">
+            <Link href="/community" className="relative text-2xl" title="Community" onClick={() => { setHasNewLostFound(false); setHasNewEvents(false) }}>
               🏘️
+              {hasNewLostFound && <span className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full border-2 border-white"></span>}
+              {hasNewEvents && !hasNewLostFound && <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white"></span>}
+              {hasNewLostFound && hasNewEvents && <span className="absolute -top-1 right-2 w-3 h-3 bg-blue-500 rounded-full border-2 border-white"></span>}
             </Link>
             <Link href="/messages" className="relative text-2xl" title="Messages">
               💬
@@ -484,8 +522,12 @@ export default function Home() {
               ❤️ Liked Items
               {likedCount > 0 && <span className="bg-red-600 text-white text-xs font-bold rounded-full px-2 py-0.5">{likedCount}</span>}
             </Link>
-            <Link href="/community" className="flex justify-between text-gray-600 hover:text-gray-900 py-2 border-b" onClick={() => setMobileMenuOpen(false)}>
-              🏘️ Community
+            <Link href="/community" className="flex justify-between text-gray-600 hover:text-gray-900 py-2 border-b" onClick={() => { setMobileMenuOpen(false); setHasNewLostFound(false); setHasNewEvents(false) }}>
+              <span>🏘️ Community</span>
+              <div className="flex gap-1 items-center">
+                {hasNewLostFound && <span className="w-3 h-3 bg-orange-500 rounded-full"></span>}
+                {hasNewEvents && <span className="w-3 h-3 bg-blue-500 rounded-full"></span>}
+              </div>
             </Link>
             <Link href="/messages" className="flex justify-between text-gray-600 hover:text-gray-900 py-2 border-b" onClick={() => setMobileMenuOpen(false)}>
               💬 Messages

@@ -76,7 +76,21 @@ function LostAndFound({ user }) {
     'Jewelry', 'Sports Equipment', 'Other'
   ]
 
-  useEffect(() => { fetchPosts() }, [])
+  useEffect(() => {
+    fetchPosts()
+  }, [])
+
+  useEffect(() => {
+    // Mark all current posts as seen
+    const markAsSeen = async () => {
+      const { data } = await supabase.from('lost_and_found').select('id').gt('expires_at', new Date().toISOString())
+      if (data) {
+        const ids = data.map(p => p.id)
+        localStorage.setItem('seenLostFound', JSON.stringify(ids))
+      }
+    }
+    markAsSeen()
+  }, [])
 
   const fetchPosts = async () => {
     try {
@@ -475,7 +489,21 @@ function Events({ user }) {
   const [activeTab, setActiveTab] = useState('upcoming')
   const [selectedEvent, setSelectedEvent] = useState(null)
 
-  useEffect(() => { fetchEvents() }, [])
+  useEffect(() => {
+    fetchEvents()
+  }, [])
+
+  useEffect(() => {
+    // Mark all current events as seen
+    const markAsSeen = async () => {
+      const { data } = await supabase.from('events').select('id').eq('status', 'approved').gt('start_date', new Date().toISOString())
+      if (data) {
+        const ids = data.map(e => e.id)
+        localStorage.setItem('seenEvents', JSON.stringify(ids))
+      }
+    }
+    markAsSeen()
+  }, [])
 
   const fetchEvents = async () => {
     try {
