@@ -447,6 +447,9 @@ export default function Home() {
                 <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{likedCount}</span>
               )}
             </Link>
+            <Link href="/community" className="relative text-2xl" title="Community">
+              🏘️
+            </Link>
             <Link href="/messages" className="relative text-2xl" title="Messages">
               💬
               {unreadMessagesCount > 0 && (
@@ -480,6 +483,9 @@ export default function Home() {
             <Link href="/my-likes" className="flex justify-between text-gray-600 hover:text-gray-900 py-2 border-b" onClick={() => setMobileMenuOpen(false)}>
               ❤️ Liked Items
               {likedCount > 0 && <span className="bg-red-600 text-white text-xs font-bold rounded-full px-2 py-0.5">{likedCount}</span>}
+            </Link>
+            <Link href="/community" className="flex justify-between text-gray-600 hover:text-gray-900 py-2 border-b" onClick={() => setMobileMenuOpen(false)}>
+              🏘️ Community
             </Link>
             <Link href="/messages" className="flex justify-between text-gray-600 hover:text-gray-900 py-2 border-b" onClick={() => setMobileMenuOpen(false)}>
               💬 Messages
