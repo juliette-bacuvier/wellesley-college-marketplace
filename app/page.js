@@ -383,7 +383,7 @@ export default function Home() {
 
   if (!user) return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm">
+      <nav className="bg-white shadow-sm relative">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold">Wellesley Finds</h1>
           <Link href="/auth" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium">
@@ -457,36 +457,17 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50">
       {showOnboarding && <OnboardingModal onComplete={completeOnboarding} />}
       {showProfileSetup && user && <ProfileSetupModal userId={user.id} onComplete={() => setShowProfileSetup(false)} />}
-      <nav className="bg-white shadow-sm">
+      <nav className="bg-white shadow-sm relative">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-xl font-bold">Wellesley Finds</h1>
-          <div className="hidden md:flex items-center gap-5">
-            <Link href="/help" className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 font-bold" title="Help">?</Link>
-<Link href="/announcements" className="relative text-2xl" title="Announcements">
-  🔔
-  {unreadAnnouncementsCount > 0 && (
-    <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{unreadAnnouncementsCount}</span>
-  )}
-</Link>            
-<Link href="/my-listings" className="relative text-gray-600 hover:text-gray-900 text-sm font-medium">
-              My Listings
-              {pendingOffersCount > 0 && (
-                <span className="absolute -top-2 -right-3 bg-red-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{pendingOffersCount}</span>
+          <div className="flex items-center gap-3">
+            {/* Always visible */}
+            <Link href="/help" className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 font-bold text-sm" title="Help">?</Link>
+            <Link href="/announcements" className="relative text-2xl" title="Announcements">
+              🔔
+              {unreadAnnouncementsCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{unreadAnnouncementsCount}</span>
               )}
-            </Link>
-            <Link href="/my-purchases" className="text-gray-600 hover:text-gray-900 text-sm font-medium">My Purchases</Link>
-            <Link href="/create-listing" className="bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">Create Listing</Link>
-            <Link href="/my-likes" className="relative text-2xl" title="My Likes">
-              ❤️
-              {likedCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{likedCount}</span>
-              )}
-            </Link>
-            <Link href="/community" className="relative text-2xl" title="Community" onClick={() => { setHasNewLostFound(false); setHasNewEvents(false) }}>
-              🏘️
-              {hasNewLostFound && <span className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full border-2 border-white"></span>}
-              {hasNewEvents && !hasNewLostFound && <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white"></span>}
-              {hasNewLostFound && hasNewEvents && <span className="absolute -top-1 right-2 w-3 h-3 bg-blue-500 rounded-full border-2 border-white"></span>}
             </Link>
             <Link href="/messages" className="relative text-2xl" title="Messages">
               💬
@@ -494,48 +475,56 @@ export default function Home() {
                 <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{unreadMessagesCount}</span>
               )}
             </Link>
-            <Link href="/profile" className="text-2xl" title="My Profile">👤</Link>
-            {isAdmin && <Link href="/admin" className="text-2xl" title="Admin Dashboard">⭐</Link>}
-            <button onClick={handleSignOut} className="text-gray-600 hover:text-gray-900 text-sm">Sign Out</button>
+            <Link href="/create-listing" className="hidden md:block bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">Create Listing</Link>
+
+            {/* Hamburger */}
+            <div className="relative">
+              <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="flex flex-col gap-1 p-2 hover:bg-gray-100 rounded-md">
+                <span className="block w-6 h-0.5 bg-gray-600"></span>
+                <span className="block w-6 h-0.5 bg-gray-600"></span>
+                <span className="block w-6 h-0.5 bg-gray-600"></span>
+              </button>
+            </div>
           </div>
-          <button className="md:hidden flex flex-col gap-1 p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            <span className="block w-6 h-0.5 bg-gray-600"></span>
-            <span className="block w-6 h-0.5 bg-gray-600"></span>
-            <span className="block w-6 h-0.5 bg-gray-600"></span>
-          </button>
         </div>
 
         {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-t px-4 py-4 space-y-3">
-            <Link href="/help" className="block text-gray-600 hover:text-gray-900 py-2 border-b" onClick={() => setMobileMenuOpen(false)}>❓ Help</Link>
-<Link href="/announcements" className="flex justify-between text-gray-600 hover:text-gray-900 py-2 border-b" onClick={() => setMobileMenuOpen(false)}>
-  🔔 Announcements
-  {unreadAnnouncementsCount > 0 && <span className="bg-red-600 text-white text-xs font-bold rounded-full px-2 py-0.5">{unreadAnnouncementsCount}</span>}
-</Link>            
-<Link href="/my-listings" className="flex justify-between text-gray-600 hover:text-gray-900 py-2 border-b" onClick={() => setMobileMenuOpen(false)}>
-              My Listings
-              {pendingOffersCount > 0 && <span className="bg-red-600 text-white text-xs font-bold rounded-full px-2 py-0.5">{pendingOffersCount}</span>}
+          <div className="absolute right-4 top-16 bg-white rounded-xl shadow-xl border z-50 w-56 py-2">
+            <Link href="/create-listing" className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-blue-600 font-semibold md:hidden" onClick={() => setMobileMenuOpen(false)}>
+              ✏️ Create Listing
             </Link>
-            <Link href="/my-purchases" className="block text-gray-600 hover:text-gray-900 py-2 border-b" onClick={() => setMobileMenuOpen(false)}>My Purchases</Link>
-            <Link href="/create-listing" className="block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-center" onClick={() => setMobileMenuOpen(false)}>Create Listing</Link>
-            <Link href="/my-likes" className="flex justify-between text-gray-600 hover:text-gray-900 py-2 border-b" onClick={() => setMobileMenuOpen(false)}>
-              ❤️ Liked Items
-              {likedCount > 0 && <span className="bg-red-600 text-white text-xs font-bold rounded-full px-2 py-0.5">{likedCount}</span>}
-            </Link>
-            <Link href="/community" className="flex justify-between text-gray-600 hover:text-gray-900 py-2 border-b" onClick={() => { setMobileMenuOpen(false); setHasNewLostFound(false); setHasNewEvents(false) }}>
+            <div className="border-t mx-4 my-1"></div>
+            <Link href="/community" className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 text-gray-700" onClick={() => { setMobileMenuOpen(false); setHasNewLostFound(false); setHasNewEvents(false) }}>
               <span>🏘️ Community</span>
-              <div className="flex gap-1 items-center">
-                {hasNewLostFound && <span className="w-3 h-3 bg-orange-500 rounded-full"></span>}
-                {hasNewEvents && <span className="w-3 h-3 bg-blue-500 rounded-full"></span>}
+              <div className="flex gap-1">
+                {hasNewLostFound && <span className="w-2.5 h-2.5 bg-orange-500 rounded-full"></span>}
+                {hasNewEvents && <span className="w-2.5 h-2.5 bg-blue-500 rounded-full"></span>}
               </div>
             </Link>
-            <Link href="/messages" className="flex justify-between text-gray-600 hover:text-gray-900 py-2 border-b" onClick={() => setMobileMenuOpen(false)}>
-              💬 Messages
-              {unreadMessagesCount > 0 && <span className="bg-red-600 text-white text-xs font-bold rounded-full px-2 py-0.5">{unreadMessagesCount}</span>}
+            <Link href="/my-listings" className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 text-gray-700" onClick={() => setMobileMenuOpen(false)}>
+              <span>🛍️ My Listings</span>
+              {pendingOffersCount > 0 && <span className="bg-red-600 text-white text-xs font-bold rounded-full px-2 py-0.5">{pendingOffersCount}</span>}
             </Link>
-            <Link href="/profile" className="block text-gray-600 hover:text-gray-900 py-2 border-b" onClick={() => setMobileMenuOpen(false)}>👤 My Profile</Link>
-            {isAdmin && <Link href="/admin" className="block text-yellow-600 hover:text-yellow-700 py-2 border-b" onClick={() => setMobileMenuOpen(false)}>⭐ Admin Dashboard</Link>}
-            <button onClick={handleSignOut} className="block w-full text-left text-gray-600 hover:text-gray-900 py-2">Sign Out</button>
+            <Link href="/my-purchases" className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-gray-700" onClick={() => setMobileMenuOpen(false)}>
+              🛒 My Purchases
+            </Link>
+            <Link href="/my-likes" className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 text-gray-700" onClick={() => setMobileMenuOpen(false)}>
+              <span>❤️ My Likes</span>
+              {likedCount > 0 && <span className="bg-red-600 text-white text-xs font-bold rounded-full px-2 py-0.5">{likedCount}</span>}
+            </Link>
+            <div className="border-t mx-4 my-1"></div>
+            <Link href="/profile" className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-gray-700" onClick={() => setMobileMenuOpen(false)}>
+              👤 My Profile
+            </Link>
+            {isAdmin && (
+              <Link href="/admin" className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-gray-700" onClick={() => setMobileMenuOpen(false)}>
+                ⭐ Admin Dashboard
+              </Link>
+            )}
+            <div className="border-t mx-4 my-1"></div>
+            <Link href="/help" className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-gray-700" onClick={() => setMobileMenuOpen(false)}>❓ Help</Link>
+            <div className="border-t mx-4 my-1"></div>
+            <button onClick={handleSignOut} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-gray-700 w-full text-left">🚪 Sign Out</button>
           </div>
         )}
       </nav>
