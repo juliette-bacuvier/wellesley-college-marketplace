@@ -231,7 +231,7 @@ export default function Home() {
       if (error) throw error
       const listingsWithProfiles = await Promise.all((data || []).map(async (listing) => {
         const { data: profile } = await supabase.from('profiles').select('name, email, phone, class_year, graduation_term').eq('id', listing.user_id).single()
-        const { data: images } = await supabase.from('listing_images').select('image_url').eq('listing_id', listing.id).order('display_order', { ascending: true }).limit(1)
+        const { data: images } = await supabase.from('listing_images').select('image_url').eq('listing_id', listing.id).order('display_order', { ascending: true })
         return { ...listing, profiles: profile, extra_images: images || [] }
       }))
       setListings(listingsWithProfiles)

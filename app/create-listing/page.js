@@ -65,14 +65,15 @@ export default function CreateListing() {
   }, [])
 
   const handleImagesChange = (e) => {
-    const files = Array.from(e.target.files)
-    if (files.length > 5) {
+    const newFiles = Array.from(e.target.files)
+    const combined = [...images, ...newFiles]
+    if (combined.length > 5) {
       alert('Maximum 5 images allowed')
       return
     }
-    setImages(files)
-    const previews = files.map(file => URL.createObjectURL(file))
-    setImagePreviews(previews)
+    setImages(combined)
+    const newPreviews = newFiles.map(file => URL.createObjectURL(file))
+    setImagePreviews([...imagePreviews, ...newPreviews])
   }
 
   const removeImage = (index) => {
