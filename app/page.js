@@ -865,7 +865,7 @@ export default function Home() {
               {/* Seller */}
               <div className="border-t pt-4">
                 <p className="text-sm text-gray-500 mb-3">
-                  Seller: <strong>{selectedListing.profiles?.name}</strong>
+                  Seller: <Link href={`/seller/${selectedListing.user_id}`} className="font-bold text-blue-600 hover:underline">{selectedListing.profiles?.name}</Link>
                   {adminIds.has(selectedListing.user_id) && <span className="ml-1">⭐</span>}
                 </p>
                 {!selectedListing.is_sold && (
