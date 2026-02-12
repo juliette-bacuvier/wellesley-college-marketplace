@@ -31,6 +31,10 @@ export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [selectedListing, setSelectedListing] = useState(null)
   const [activeModalImage, setActiveModalImage] = useState(0)
+  const [showReportModal, setShowReportModal] = useState(false)
+  const [reportReason, setReportReason] = useState('')
+  const [reportDetails, setReportDetails] = useState('')
+  const [reportSubmitting, setReportSubmitting] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showProfileSetup, setShowProfileSetup] = useState(false)
   const router = useRouter()
@@ -366,6 +370,31 @@ export default function Home() {
     return new Date(createdAt) > threeDaysAgo
   }
 
+  const submitReport = async () => {
+    if (!reportReason) {
+      alert('Please select a reason')
+      return
+    }
+    setReportSubmitting(true)
+    try {
+      await supabase.from('reports').insert([{
+        listing_id: selectedListing.id,
+        reporter_id: user.id,
+        reason: reportReason,
+        details: reportDetails
+      }])
+      alert('Report submitted. Thank you for helping keep our community safe!')
+      setShowReportModal(false)
+      setReportReason('')
+      setReportDetails('')
+    } catch (error) {
+      console.error('Error submitting report:', error)
+      alert('Failed to submit report')
+    } finally {
+      setReportSubmitting(false)
+    }
+  }
+
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     router.push('/')
@@ -438,6 +467,42 @@ export default function Home() {
           </p>
         </div>
       </main>
+
+      {/* Report Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center px-4" onClick={() => setShowReportModal(false)}>
+          <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <h2 className="text-2xl font-bold mb-4">🚨 Report Listing</h2>
+            <p className="text-gray-500 text-sm mb-6">Help us keep Wellesley Finds safe. Your report is anonymous to the seller.</p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Reason *</label>
+                <select value={reportReason} onChange={e => setReportReason(e.target.value)} className="w-full px-3 py-2 border rounded-md" required>
+                  <option value="">Select a reason</option>
+                  <option value="prohibited">Prohibited items (weapons, drugs, etc.)</option>
+                  <option value="counterfeit">Counterfeit or stolen goods</option>
+                  <option value="misleading">Misleading description or photos</option>
+                  <option value="spam">Spam or scam</option>
+                  <option value="inappropriate">Inappropriate content</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Additional details (optional)</label>
+                <textarea value={reportDetails} onChange={e => setReportDetails(e.target.value)} className="w-full px-3 py-2 border rounded-md" rows="3" placeholder="Provide any additional context..."></textarea>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={submitReport} disabled={reportSubmitting} className="flex-1 bg-red-600 text-white py-3 rounded-xl font-semibold hover:bg-red-700 disabled:opacity-50 transition">
+                  {reportSubmitting ? 'Submitting...' : 'Submit Report'}
+                </button>
+                <button onClick={() => { setShowReportModal(false); setReportReason(''); setReportDetails('') }} className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-200 transition">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <footer className="bg-white border-t mt-12 py-6">
         <div className="max-w-7xl mx-auto px-4 text-center space-y-3">
@@ -659,6 +724,42 @@ export default function Home() {
           </div>
         )}
       </main>
+
+      {/* Report Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center px-4" onClick={() => setShowReportModal(false)}>
+          <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <h2 className="text-2xl font-bold mb-4">🚨 Report Listing</h2>
+            <p className="text-gray-500 text-sm mb-6">Help us keep Wellesley Finds safe. Your report is anonymous to the seller.</p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Reason *</label>
+                <select value={reportReason} onChange={e => setReportReason(e.target.value)} className="w-full px-3 py-2 border rounded-md" required>
+                  <option value="">Select a reason</option>
+                  <option value="prohibited">Prohibited items (weapons, drugs, etc.)</option>
+                  <option value="counterfeit">Counterfeit or stolen goods</option>
+                  <option value="misleading">Misleading description or photos</option>
+                  <option value="spam">Spam or scam</option>
+                  <option value="inappropriate">Inappropriate content</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Additional details (optional)</label>
+                <textarea value={reportDetails} onChange={e => setReportDetails(e.target.value)} className="w-full px-3 py-2 border rounded-md" rows="3" placeholder="Provide any additional context..."></textarea>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={submitReport} disabled={reportSubmitting} className="flex-1 bg-red-600 text-white py-3 rounded-xl font-semibold hover:bg-red-700 disabled:opacity-50 transition">
+                  {reportSubmitting ? 'Submitting...' : 'Submit Report'}
+                </button>
+                <button onClick={() => { setShowReportModal(false); setReportReason(''); setReportDetails('') }} className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-200 transition">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <footer className="bg-white border-t mt-12 py-6">
         <div className="max-w-7xl mx-auto px-4 text-center space-y-3">
