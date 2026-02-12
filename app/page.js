@@ -32,6 +32,7 @@ export default function Home() {
   const [selectedListing, setSelectedListing] = useState(null)
   const [activeModalImage, setActiveModalImage] = useState(0)
   const [showReportModal, setShowReportModal] = useState(false)
+  const [showDomainBanner, setShowDomainBanner] = useState(false)
   const [reportReason, setReportReason] = useState('')
   const [reportDetails, setReportDetails] = useState('')
   const [reportSubmitting, setReportSubmitting] = useState(false)
@@ -370,6 +371,11 @@ export default function Home() {
     return new Date(createdAt) > threeDaysAgo
   }
 
+  const dismissDomainBanner = () => {
+    localStorage.setItem('domainBannerDismissed', 'true')
+    setShowDomainBanner(false)
+  }
+
   const submitReport = async () => {
     if (!reportReason) {
       alert('Please select a reason')
@@ -593,6 +599,21 @@ export default function Home() {
           </div>
         )}
       </nav>
+
+      {/* New Domain Banner */}
+      {showDomainBanner && (
+        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-4">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">🎉</span>
+              <p className="text-sm md:text-base">
+                <strong>We've moved!</strong> Wellesley Finds is now at <strong>wellesleyfinds.com</strong> — update your bookmarks!
+              </p>
+            </div>
+            <button onClick={dismissDomainBanner} className="text-white hover:text-gray-200 text-xl font-bold ml-4">✕</button>
+          </div>
+        </div>
+      )}
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-6 space-y-4">
