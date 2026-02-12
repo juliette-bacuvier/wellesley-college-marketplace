@@ -46,6 +46,7 @@ export default function ListingPage() {
   const [reportDetails, setReportDetails] = useState('')
   const [reportSubmitting, setReportSubmitting] = useState(false)
   const [reportSuccess, setReportSuccess] = useState(false)
+  const [showImageZoom, setShowImageZoom] = useState(false)
 
   useEffect(() => {
     const init = async () => {
