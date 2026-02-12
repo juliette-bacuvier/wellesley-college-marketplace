@@ -313,6 +313,28 @@ export default function AdminDashboard() {
       </nav>
 
       <main className="max-w-5xl mx-auto px-4 py-8 space-y-8">
+        {/* Quick links */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Link href="/admin/analytics" className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-6 hover:shadow-xl transition group">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-2xl font-bold mb-1">📊 Analytics</h3>
+                <p className="text-blue-100 text-sm">Detailed insights & reports</p>
+              </div>
+              <span className="text-4xl group-hover:scale-110 transition">→</span>
+            </div>
+          </Link>
+          <Link href="/admin/users" className="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl p-6 hover:shadow-xl transition group">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-2xl font-bold mb-1">👥 Users</h3>
+                <p className="text-purple-100 text-sm">Manage & moderate users</p>
+              </div>
+              <span className="text-4xl group-hover:scale-110 transition">→</span>
+            </div>
+          </Link>
+        </div>
+
 
         {/* Analytics Section */}
         <section>
