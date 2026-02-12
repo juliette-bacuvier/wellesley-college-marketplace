@@ -52,11 +52,13 @@ export default function UserManagement() {
       const usersWithStats = await Promise.all((data || []).map(async (u) => {
         const { data: listings } = await supabase.from('listings').select('id, is_sold').eq('user_id', u.id)
         const { data: purchases } = await supabase.from('listings').select('id').eq('buyer_id', u.id).eq('is_sold', true)
+        const { data: reports } = await supabase.from('reports').select('id').eq('reporter_id', u.id)
         return {
           ...u,
           listingCount: listings?.length || 0,
           soldCount: listings?.filter(l => l.is_sold).length || 0,
-          purchaseCount: purchases?.length || 0
+          purchaseCount: purchases?.length || 0,
+          reportCount: reports?.length || 0
         }
       }))
       setUsers(usersWithStats)
@@ -196,6 +198,7 @@ export default function UserManagement() {
                 <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600">Listings</th>
                 <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600">Sold</th>
                 <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600">Purchased</th>
+                <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600">Reports</th>
                 <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600">Joined</th>
                 <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600">Status</th>
                 <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600">Actions</th>
@@ -212,6 +215,13 @@ export default function UserManagement() {
                   <td className="px-4 py-3 text-sm">{u.listingCount}</td>
                   <td className="px-4 py-3 text-sm text-green-600 font-medium">{u.soldCount}</td>
                   <td className="px-4 py-3 text-sm text-blue-600 font-medium">{u.purchaseCount}</td>
+                  <td className="px-4 py-3">
+                    {u.reportCount > 0 ? (
+                      <span className="text-sm font-bold text-red-600">{u.reportCount}</span>
+                    ) : (
+                      <span className="text-sm text-gray-400">0</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-xs text-gray-500">{new Date(u.created_at).toLocaleDateString()}</td>
                   <td className="px-4 py-3">
                     {u.is_banned ? (
@@ -279,6 +289,10 @@ function UserDetailModal({ user, onClose, onBan, onUnban, onDeleteListings }) {
             <div>
               <p className="text-gray-500">Purchases</p>
               <p className="font-medium text-blue-600">{user.purchaseCount}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Reports Made</p>
+              <p className="font-medium text-red-600">{user.reportCount}</p>
             </div>
             <div>
               <p className="text-gray-500">Joined</p>
