@@ -1,7 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
-const ADMIN_EMAIL = 'jb122@wellesley.edu'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,12 +19,9 @@ serve(async (req) => {
     let html = ''
 
     if (type === 'new_offer') {
-      subject = `💰 [FOR ${to}] New offer on: ${data.listing_title}`
+      subject = `💰 New offer on: ${data.listing_title}`
       html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="background: #fef3c7; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
-            <p style="margin: 0; font-size: 13px; color: #92400e;">📬 This email was intended for <strong>${to}</strong> — please forward it to them.</p>
-          </div>
           <h2 style="color: #1d4ed8;">New offer received! 🎉</h2>
           <p>Hi ${data.seller_name},</p>
           <p><strong>${data.buyer_name}</strong> has made an offer on your listing:</p>
@@ -34,21 +30,18 @@ serve(async (req) => {
             <p style="font-size: 24px; font-weight: bold; color: #16a34a; margin: 0;">Offer: $${data.offer_amount}</p>
             ${data.listing_price ? `<p style="color: #6b7280; margin: 4px 0;">Asking price: $${data.listing_price}</p>` : ''}
           </div>
-          <a href="https://wellesley-college-marketplace.vercel.app/my-listings" 
+          <a href="https://wellesleyfinds.com/my-listings" 
              style="background: #1d4ed8; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; display: inline-block; margin: 16px 0;">
             View Offer →
           </a>
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
-          <p style="color: #9ca3af; font-size: 12px;">Wellesley College Marketplace • Made with 💙 by Juliette</p>
+          <p style="color: #9ca3af; font-size: 12px;">Wellesley Finds • Made with 💙 by Juliette Bacuvier</p>
         </div>
       `
     } else if (type === 'offer_accepted') {
-      subject = `✅ [FOR ${to}] Your offer was accepted: ${data.listing_title}`
+      subject = `✅ Your offer was accepted: ${data.listing_title}`
       html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="background: #fef3c7; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
-            <p style="margin: 0; font-size: 13px; color: #92400e;">📬 This email was intended for <strong>${to}</strong> — please forward it to them.</p>
-          </div>
           <h2 style="color: #16a34a;">Offer accepted! 🎉</h2>
           <p>Hi ${data.buyer_name},</p>
           <p><strong>${data.seller_name}</strong> accepted your offer on:</p>
@@ -56,37 +49,35 @@ serve(async (req) => {
             <h3 style="margin: 0 0 8px 0;">${data.listing_title}</h3>
             <p style="font-size: 24px; font-weight: bold; color: #16a34a; margin: 0;">$${data.offer_amount}</p>
           </div>
+          <p><strong>Next steps:</strong></p>
           <ul>
             <li>Seller email: <a href="mailto:${data.seller_email}">${data.seller_email}</a></li>
             ${data.seller_phone ? `<li>Seller phone: ${data.seller_phone}</li>` : ''}
           </ul>
-          <a href="https://wellesley-college-marketplace.vercel.app/my-purchases" 
+          <a href="https://wellesleyfinds.com/my-purchases" 
              style="background: #16a34a; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; display: inline-block; margin: 16px 0;">
             View My Purchases →
           </a>
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
-          <p style="color: #9ca3af; font-size: 12px;">Wellesley College Marketplace • Made with 💙 by Juliette</p>
+          <p style="color: #9ca3af; font-size: 12px;">Wellesley Finds • Made with 💙 by Juliette Bacuvier</p>
         </div>
       `
     } else if (type === 'new_message') {
-      subject = `💬 [FOR ${to}] New message about: ${data.listing_title}`
+      subject = `💬 New message about: ${data.listing_title}`
       html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="background: #fef3c7; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
-            <p style="margin: 0; font-size: 13px; color: #92400e;">📬 This email was intended for <strong>${to}</strong> — please forward it to them.</p>
-          </div>
           <h2 style="color: #1d4ed8;">New message! 💬</h2>
           <p>Hi ${data.recipient_name},</p>
           <p><strong>${data.sender_name}</strong> sent a message about <strong>${data.listing_title}</strong>:</p>
           <div style="background: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #1d4ed8;">
             <p style="margin: 0; font-style: italic;">"${data.message}"</p>
           </div>
-          <a href="https://wellesley-college-marketplace.vercel.app/listing/${data.listing_id}" 
+          <a href="https://wellesleyfinds.com/listing/${data.listing_id}" 
              style="background: #1d4ed8; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; display: inline-block; margin: 16px 0;">
             Reply →
           </a>
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
-          <p style="color: #9ca3af; font-size: 12px;">Wellesley College Marketplace • Made with 💙 by Juliette</p>
+          <p style="color: #9ca3af; font-size: 12px;">Wellesley Finds • Made with 💙 by Juliette Bacuvier</p>
         </div>
       `
     }
@@ -98,8 +89,8 @@ serve(async (req) => {
         'Authorization': `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'Wellesley Marketplace <onboarding@resend.dev>',
-        to: [ADMIN_EMAIL],
+        from: 'Wellesley Finds <notifications@wellesleyfinds.com>',
+        to: [to],
         subject,
         html,
       }),

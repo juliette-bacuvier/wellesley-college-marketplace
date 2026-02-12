@@ -28,7 +28,7 @@ export default function Auth() {
     setResetMessage('')
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: 'https://wellesley-college-marketplace.vercel.app/auth/reset-password'
+        redirectTo: 'https://wellesleyfinds.com/auth/reset-password'
       })
       if (error) throw error
       setResetMessage('Password reset email sent! Check your inbox.')
