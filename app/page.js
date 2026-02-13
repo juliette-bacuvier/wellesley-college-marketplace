@@ -32,7 +32,7 @@ export default function Home() {
   const [selectedListing, setSelectedListing] = useState(null)
   const [activeModalImage, setActiveModalImage] = useState(0)
   const [showReportModal, setShowReportModal] = useState(false)
-  const [showDomainBanner, setShowDomainBanner] = useState(false)
+  // const [showDomainBanner, setShowDomainBanner] = useState(false)
   const [reportReason, setReportReason] = useState('')
   const [reportDetails, setReportDetails] = useState('')
   const [reportSubmitting, setReportSubmitting] = useState(false)
@@ -57,8 +57,8 @@ export default function Home() {
         checkOnboarding(user.id)
         checkProfileSetup(user.id)
         // Check domain banner after user is verified
-        const domainBannerDismissed = localStorage.getItem('domainBannerDismissed')
-        if (!domainBannerDismissed) setShowDomainBanner(true)
+        // const domainBannerDismissed = localStorage.getItem('domainBannerDismissed')
+        // if (!domainBannerDismissed) setShowDomainBanner(true)
       }
       setLoading(false)
     })
@@ -600,7 +600,7 @@ const submitReport = async () => {
       </nav>
 
       {/* New Domain Banner */}
-      {showDomainBanner && (
+      {/* showDomainBanner && (
         <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-4">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -614,7 +614,7 @@ const submitReport = async () => {
             <button onClick={dismissDomainBanner} className="text-white hover:text-gray-200 text-xl font-bold ml-4">✕</button>
           </div>
         </div>
-      )}
+      ) */}
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-6 space-y-4">
