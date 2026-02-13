@@ -606,17 +606,17 @@ const submitReport = async () => {
 
       {/* New Domain Banner */}
       {showDomainBanner && (
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-4">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">🎉</span>
+        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 px-4">
+          <div className="max-w-7xl mx-auto flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3 flex-1">
+              <span className="text-2xl flex-shrink-0">🎉</span>
               <div className="text-sm md:text-base">
-                <p className="mb-1"><strong>🎉 We've moved!</strong> Wellesley Finds is now at <strong>wellesleyfinds.com</strong></p>
+                <p className="mb-1.5"><strong>We've moved!</strong> Wellesley Finds is now at <strong>wellesleyfinds.com</strong></p>
                 <p className="text-xs md:text-sm opacity-90 mb-1">You'll now receive notifications from <strong>notifications@wellesleyfinds.com</strong></p>
                 <p className="text-xs md:text-sm opacity-90">💙 Made possible thanks to a generous donor</p>
               </div>
             </div>
-            <button onClick={dismissDomainBanner} className="text-white hover:text-gray-200 text-xl font-bold ml-4">✕</button>
+            <button onClick={dismissDomainBanner} className="text-white hover:text-gray-200 text-2xl font-bold flex-shrink-0 -mt-1">✕</button>
           </div>
         </div>
       )}
