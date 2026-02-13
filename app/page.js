@@ -375,6 +375,11 @@ export default function Home() {
     return new Date(createdAt) > threeDaysAgo
   }
 
+  const dismissDomainBanner = () => {
+    localStorage.setItem('domainBannerDismissed', 'true')
+    setShowDomainBanner(false)
+  }
+
 const submitReport = async () => {
     if (!reportReason) {
       alert('Please select a reason')
