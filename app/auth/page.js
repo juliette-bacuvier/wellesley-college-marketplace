@@ -9,6 +9,7 @@ export default function Auth() {
   const [password, setPassword] = useState('')
   const [isSignUp, setIsSignUp] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const [message, setMessage] = useState('')
   const [messageType, setMessageType] = useState('error')
   const [agreedToRules, setAgreedToRules] = useState(false)

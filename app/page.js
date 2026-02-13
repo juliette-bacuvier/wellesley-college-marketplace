@@ -371,12 +371,7 @@ export default function Home() {
     return new Date(createdAt) > threeDaysAgo
   }
 
-  const dismissDomainBanner = () => {
-    localStorage.setItem('domainBannerDismissed', 'true')
-    setShowDomainBanner(false)
-  }
-
-  const submitReport = async () => {
+const submitReport = async () => {
     if (!reportReason) {
       alert('Please select a reason')
       return
@@ -606,9 +601,10 @@ export default function Home() {
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="text-2xl">🎉</span>
-              <p className="text-sm md:text-base">
-                <strong>We've moved!</strong> Wellesley Finds is now at <strong>wellesleyfinds.com</strong> — update your bookmarks!
-              </p>
+              <div className="text-sm md:text-base">
+                <p className="mb-1"><strong>🎉 We've moved!</strong> Wellesley Finds is now at <strong>wellesleyfinds.com</strong></p>
+                <p className="text-xs md:text-sm opacity-90">You'll now receive notifications from <strong>notifications@wellesleyfinds.com</strong> — no more jb122 workaround!</p>
+              </div>
             </div>
             <button onClick={dismissDomainBanner} className="text-white hover:text-gray-200 text-xl font-bold ml-4">✕</button>
           </div>
