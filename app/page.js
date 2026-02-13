@@ -603,7 +603,8 @@ const submitReport = async () => {
               <span className="text-2xl">🎉</span>
               <div className="text-sm md:text-base">
                 <p className="mb-1"><strong>🎉 We've moved!</strong> Wellesley Finds is now at <strong>wellesleyfinds.com</strong></p>
-                <p className="text-xs md:text-sm opacity-90">You'll now receive notifications from <strong>notifications@wellesleyfinds.com</strong> — no more jb122 workaround!</p>
+                <p className="text-xs md:text-sm opacity-90 mb-1">You'll now receive notifications from <strong>notifications@wellesleyfinds.com</strong></p>
+                <p className="text-xs md:text-sm opacity-90">💙 Made possible thanks to a generous donor</p>
               </div>
             </div>
             <button onClick={dismissDomainBanner} className="text-white hover:text-gray-200 text-xl font-bold ml-4">✕</button>
