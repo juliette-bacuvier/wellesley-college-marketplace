@@ -53,11 +53,12 @@ export default function Home() {
         checkNewLostFound()
         checkNewEvents()
         // Check if domain banner has been dismissed
-        const domainBannerDismissed = localStorage.getItem('domainBannerDismissed')
-        if (!domainBannerDismissed) setShowDomainBanner(true)
         checkAdminStatus(user.id)
         checkOnboarding(user.id)
         checkProfileSetup(user.id)
+        // Check domain banner after user is verified
+        const domainBannerDismissed = localStorage.getItem('domainBannerDismissed')
+        if (!domainBannerDismissed) setShowDomainBanner(true)
       }
       setLoading(false)
     })
