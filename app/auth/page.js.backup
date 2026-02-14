@@ -3,10 +3,6 @@ import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { isValidWellesleyEmail, validatePassword, RateLimiter } from '@/lib/security'
-
-// Rate limiter for auth attempts (5 attempts per minute)
-const authRateLimiter = new RateLimiter(5, 60000)
 
 export default function Auth() {
   const [email, setEmail] = useState('')
@@ -25,37 +21,20 @@ export default function Auth() {
   const [resetEmail, setResetEmail] = useState('')
   const [resetLoading, setResetLoading] = useState(false)
   const [resetMessage, setResetMessage] = useState('')
-  const [passwordError, setPasswordError] = useState('')
   const router = useRouter()
 
   const handleForgotPassword = async (e) => {
     e.preventDefault()
     setResetLoading(true)
     setResetMessage('')
-    
-    // Validate email
-    if (!isValidWellesleyEmail(resetEmail)) {
-      setResetMessage('Please enter a valid @wellesley.edu email address')
-      setResetLoading(false)
-      return
-    }
-    
-    // Check rate limit
-    if (!authRateLimiter.isAllowed(`reset-${resetEmail}`)) {
-      setResetMessage('Too many attempts. Please try again in a minute.')
-      setResetLoading(false)
-      return
-    }
-    
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/auth/reset-password`
+        redirectTo: 'https://wellesleyfinds.com/auth/reset-password'
       })
       if (error) throw error
       setResetMessage('Password reset email sent! Check your inbox.')
     } catch (error) {
-      console.error('Password reset error:', error)
-      setResetMessage('Error sending reset email. Please try again.')
+      setResetMessage('Error: ' + error.message)
     } finally {
       setResetLoading(false)
     }
@@ -66,7 +45,7 @@ export default function Auth() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/?setup=true`,
+          redirectTo: window.location.origin + '/?setup=true',
           queryParams: {
             hd: 'wellesley.edu'
           }
@@ -74,69 +53,46 @@ export default function Auth() {
       })
       if (error) throw error
     } catch (error) {
-      console.error('Google sign in error:', error)
-      setMessage('Error signing in with Google. Please try again.')
+      setMessage('Error: ' + error.message)
       setMessageType('error')
     }
   }
 
   const handleAuth = async (e) => {
     e.preventDefault()
-    
-    // Clear previous messages
-    setMessage('')
-    setPasswordError('')
-    
-    // Validate agreement for sign up
     if (isSignUp && !agreedToRules) {
       setMessage('You must agree to the community guidelines to sign up.')
       setMessageType('error')
       return
     }
-    
-    // Validate email format
-    if (!isValidWellesleyEmail(email)) {
-      setMessage('Please enter a valid @wellesley.edu email address')
-      setMessageType('error')
-      return
-    }
-    
-    // Validate password for sign up
-    if (isSignUp) {
-      const passwordValidation = validatePassword(password)
-      if (!passwordValidation.valid) {
-        setPasswordError(passwordValidation.error)
-        return
-      }
-    }
-    
-    // Check rate limit
-    const rateLimitKey = `auth-${email}`
-    if (!authRateLimiter.isAllowed(rateLimitKey)) {
-      setMessage('Too many attempts. Please try again in a minute.')
-      setMessageType('error')
-      return
-    }
-    
     setLoading(true)
+    setMessage('')
 
     try {
       if (isSignUp) {
-        // Sign up
-        const { data, error } = await supabase.auth.signUp({ 
-          email: email.toLowerCase().trim(), 
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth/confirm`,
-            data: {
-              email: email.toLowerCase().trim()
-            }
-          }
-        })
-        
+        if (!email.endsWith('@wellesley.edu')) {
+          setMessage('You must use a @wellesley.edu email address to sign up.')
+          setMessageType('error')
+          setLoading(false)
+          return
+        }
+        // Check if user already exists
+        const { data: existingUser } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', email)
+          .single()
+
+        if (existingUser) {
+          setMessage('An account with this email already exists. Please sign in instead.')
+          setMessageType('error')
+          setLoading(false)
+          return
+        }
+
+        const { error } = await supabase.auth.signUp({ email, password })
         if (error) {
-          if (error.message.toLowerCase().includes('already registered') || 
-              error.message.toLowerCase().includes('already exists')) {
+          if (error.message.toLowerCase().includes('already registered') || error.message.toLowerCase().includes('already exists')) {
             setMessage('An account with this email already exists. Please sign in instead.')
           } else {
             setMessage(error.message)
@@ -145,44 +101,16 @@ export default function Auth() {
           setLoading(false)
           return
         }
-        
-        // Check if email confirmation is required
-        if (data?.user && !data.session) {
-          setSignUpEmail(email)
-          setMessage('go_check_email')
-          setMessageType('success')
-          // Reset rate limiter on successful signup
-          authRateLimiter.reset(rateLimitKey)
-        } else if (data?.session) {
-          // User is automatically signed in (email confirmation disabled)
-          router.push('/')
-        }
+        setSignUpEmail(email)
+        setMessage('go_check_email')
+        setMessageType('success')
       } else {
-        // Sign in
-        const { data, error } = await supabase.auth.signInWithPassword({ 
-          email: email.toLowerCase().trim(), 
-          password 
-        })
-        
-        if (error) {
-          if (error.message.toLowerCase().includes('invalid') || 
-              error.message.toLowerCase().includes('incorrect')) {
-            setMessage('Invalid email or password')
-          } else {
-            setMessage(error.message)
-          }
-          setMessageType('error')
-          setLoading(false)
-          return
-        }
-        
-        // Reset rate limiter on successful login
-        authRateLimiter.reset(rateLimitKey)
+        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        if (error) throw error
         router.push('/')
       }
     } catch (error) {
-      console.error('Auth error:', error)
-      setMessage('An unexpected error occurred. Please try again.')
+      setMessage(error.message)
       setMessageType('error')
     } finally {
       setLoading(false)
@@ -192,14 +120,6 @@ export default function Auth() {
   const handleResendEmail = async () => {
     setResendLoading(true)
     setResendMessage('')
-    
-    // Check rate limit
-    if (!authRateLimiter.isAllowed(`resend-${signUpEmail}`)) {
-      setResendMessage('Too many attempts. Please try again in a minute.')
-      setResendLoading(false)
-      return
-    }
-    
     try {
       const { error } = await supabase.auth.resend({
         type: 'signup',
@@ -208,14 +128,12 @@ export default function Auth() {
       if (error) throw error
       setResendMessage('Email resent! Check your inbox.')
     } catch (error) {
-      console.error('Resend error:', error)
-      setResendMessage('Failed to resend email. Please try again.')
+      setResendMessage('Failed to resend: ' + error.message)
     } finally {
       setResendLoading(false)
     }
   }
 
-  // Forgot Password View
   if (showForgotPassword) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -270,7 +188,6 @@ export default function Auth() {
     )
   }
 
-  // Email Verification View
   if (message === 'go_check_email') {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -279,52 +196,64 @@ export default function Auth() {
             <Link href="/" className="text-xl font-bold">Wellesley Finds</Link>
           </div>
         </nav>
+
         <div className="flex-1 flex items-center justify-center px-4 py-12">
           <div className="bg-white rounded-xl shadow-md p-8 w-full max-w-md text-center">
-            <div className="text-6xl mb-4">📧</div>
-            <h1 className="text-2xl font-bold mb-2">Check your email</h1>
-            <p className="text-gray-600 mb-6">
-              We've sent a confirmation link to <strong>{signUpEmail}</strong>
+            <div className="text-6xl mb-4">📬</div>
+            <h2 className="text-3xl font-bold mb-3">Go check your email!</h2>
+            <p className="text-gray-600 mb-2">
+              We sent a verification link to:
             </p>
-            <p className="text-sm text-gray-500 mb-6">
-              Click the link in the email to verify your account. The link will expire in 24 hours.
+            <p className="font-bold text-blue-600 mb-6">{signUpEmail}</p>
+            <p className="text-gray-500 text-sm mb-8">
+              Click the link in the email to verify your account and get started. Don't forget to check your spam folder!
             </p>
-            <div className="space-y-3">
+
+            <div className="border-t pt-6">
+              <p className="text-gray-500 text-sm mb-3">Didn't receive it?</p>
               <button
                 onClick={handleResendEmail}
                 disabled={resendLoading}
-                className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 text-sm"
+                className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 text-sm font-medium"
               >
-                {resendLoading ? 'Sending...' : 'Resend email'}
+                {resendLoading ? 'Sending...' : '🔄 Resend Verification Email'}
               </button>
               {resendMessage && (
-                <p className={`text-sm ${resendMessage.includes('sent') ? 'text-green-600' : 'text-red-600'}`}>
+                <p className={`mt-3 text-sm ${resendMessage.includes('resent') ? 'text-green-600' : 'text-red-600'}`}>
                   {resendMessage}
                 </p>
               )}
-              <button
-                onClick={() => {
-                  setMessage('')
-                  setSignUpEmail('')
-                  setIsSignUp(false)
-                }}
-                className="w-full text-gray-500 hover:text-gray-700 text-sm hover:underline"
-              >
-                Back to sign in
-              </button>
             </div>
+
+            <button
+              onClick={() => {
+                setMessage('')
+                setIsSignUp(false)
+                setEmail('')
+                setPassword('')
+              }}
+              className="mt-4 text-gray-500 hover:text-gray-700 text-sm hover:underline block w-full"
+            >
+              Back to Sign In
+            </button>
           </div>
         </div>
+
         <footer className="bg-white border-t py-6">
-          <div className="max-w-7xl mx-auto px-4 text-center">
+          <div className="max-w-7xl mx-auto px-4 text-center space-y-3">
             <p className="text-gray-500 text-sm">Made with 💙 by Juliette Bacuvier • Wellesley College Class of 2026</p>
+            <a href="https://buymeacoffee.com/jbacuvier" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
+              ☕ Buy me a coffee!
+            </a>
+            <div>
+              <a href="/terms" className="text-gray-400 hover:text-gray-600 text-xs hover:underline">Terms of Use</a>
+            </div>
           </div>
         </footer>
       </div>
     )
   }
 
-  // Main Auth View (Sign In / Sign Up)
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <nav className="bg-white shadow-sm">
@@ -376,7 +305,6 @@ export default function Auth() {
                 required
                 className="w-full px-3 py-2 border rounded-md"
                 placeholder="yourname@wellesley.edu"
-                autoComplete="email"
               />
               {isSignUp && (
                 <p className="text-xs text-gray-500 mt-1">Must be a @wellesley.edu email</p>
@@ -385,30 +313,14 @@ export default function Auth() {
 
             <div>
               <label className="block text-sm font-medium mb-1">Password</label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 border rounded-md pr-10"
-                  placeholder="••••••••"
-                  autoComplete={isSignUp ? 'new-password' : 'current-password'}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                >
-                  {showPassword ? '👁️' : '👁️‍🗨️'}
-                </button>
-              </div>
-              {isSignUp && (
-                <p className="text-xs text-gray-500 mt-1">At least 8 characters with letters and numbers</p>
-              )}
-              {passwordError && (
-                <p className="text-xs text-red-600 mt-1">{passwordError}</p>
-              )}
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full px-3 py-2 border rounded-md"
+                placeholder="••••••••"
+              />
             </div>
 
             {isSignUp && (
@@ -479,7 +391,7 @@ export default function Auth() {
             <button
               type="submit"
               disabled={loading || (isSignUp && !agreedToRules)}
-              className="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 disabled:opacity-50 font-medium transition"
+              className="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 disabled:opacity-50 font-medium"
             >
               {loading ? 'Loading...' : isSignUp ? 'Create Account' : 'Sign In'}
             </button>
@@ -494,7 +406,7 @@ export default function Auth() {
               </button>
             )}
 
-            {message && (
+            {message && message !== 'go_check_email' && (
               <p className={`text-center text-sm ${messageType === 'success' ? 'text-green-600' : 'text-red-600'}`}>
                 {message}
               </p>
@@ -506,7 +418,6 @@ export default function Auth() {
               onClick={() => {
                 setIsSignUp(!isSignUp)
                 setMessage('')
-                setPasswordError('')
                 setAgreedToRules(false)
                 setShowRules(false)
               }}
