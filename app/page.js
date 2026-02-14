@@ -47,6 +47,19 @@ export default function Home() {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user)
       if (user) {
+      // Check if user is banned
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_banned, banned_reason')
+        .eq('id', user.id)
+        .single()
+      
+      if (profile?.is_banned) {
+        await supabase.auth.signOut()
+        alert(`Your account has been banned.\n\nReason: ${profile.banned_reason}\n\nIf you believe this is a mistake, please contact support.`)
+        router.push('/auth')
+        return
+      }
         fetchUserLikes(user.id)
         fetchPendingOffers(user.id)
         fetchUnreadMessages(user.id)
@@ -113,6 +126,19 @@ export default function Home() {
   const completeOnboarding = async () => {
     setShowOnboarding(false)
     if (user) {
+      // Check if user is banned
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_banned, banned_reason')
+        .eq('id', user.id)
+        .single()
+      
+      if (profile?.is_banned) {
+        await supabase.auth.signOut()
+        alert(`Your account has been banned.\n\nReason: ${profile.banned_reason}\n\nIf you believe this is a mistake, please contact support.`)
+        router.push('/auth')
+        return
+      }
       await supabase
         .from('profiles')
         .update({ has_seen_onboarding: true })
